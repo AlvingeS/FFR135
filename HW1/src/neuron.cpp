@@ -1,17 +1,16 @@
 #include "neuron.h"
 
-Neuron::Neuron(const vector<double> &initial_weights, const double initial_threshold) {
-    weights = initial_weights;
-    threshold = initial_threshold;
+Neuron::Neuron(vector<double>& neuron_weights, double threshold)
+    : neuron_weights(neuron_weights), threshold(threshold) {
 }
 
-double Neuron::get_output(const vector<double> &input) {
+void Neuron::update_state(const vector<double> input_signals) {
     double sum = 0;
-    for (long unsigned int i = 0; i < input.size(); i++) {
-        sum += input[i] * weights[i];
+    for (size_t i = 0; i < input_signals.size(); i++) {
+        sum += input_signals[i] * neuron_weights[i];
     }
 
-    if (sum == threshold) {
-        return 1;
-    } else return sum > threshold;
+    if (sum == this->threshold) {
+        this->state = 1;
+    } else this->state = (sum > threshold) ? 1 : -1;
 };

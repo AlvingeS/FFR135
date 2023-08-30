@@ -1,4 +1,4 @@
-#include "hopfield.h"
+#include "hopfield_network.h"
 #include<vector>
 #include<string>
 #include <iostream>
@@ -38,6 +38,11 @@ void printPatterns(vector<vector<int>> patterns) {
 int main() {
     vector<vector<int>> patterns = parsePatterns("patterns.txt");
     vector<vector<int>> distorted_patterns = parsePatterns("distorted_patterns.txt");
+
+    HopfieldNetwork hopfield_network = HopfieldNetwork(10*16);
+    hopfield_network.train(patterns);
+    vector<int> classified_numbers = hopfield_network.recall(distorted_patterns);
+    // hopfield_network.print_weights();
 
     return 0;
 }
