@@ -6,10 +6,12 @@ using namespace std;
 
 class Neuron {
     public:
-        Neuron(vector<double>& neuron_weights, double threshold);
+        Neuron(int state, vector<double>& neuron_weights);
+        void set_neuron_weights(vector<double>& neuron_weights);
         void update_state(const vector<double> input_signals);
+        void set_state(int state);
+        int get_state();
     private:
-        vector<double>& neuron_weights;
-        double threshold;
         int state;
+        vector<double>& neuron_weights;
 };

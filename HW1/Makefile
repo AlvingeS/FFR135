@@ -1,4 +1,4 @@
-CC = g++
+CC = clang++
 CFLAGS = -std=c++17 -Wall
 SRC_DIR = src/
 OBJ_DIR = obj/

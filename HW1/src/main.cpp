@@ -43,6 +43,11 @@ int main() {
     hopfield_network.train(patterns);
     vector<int> classified_numbers = hopfield_network.recall(distorted_patterns);
     // hopfield_network.print_weights();
-
+    
+    hopfield_network.feed_distorted_pattern(distorted_patterns[2]);
+    hopfield_network.print_state(10);
+    hopfield_network.update_neurons();
+    cout << "----------------------------" << endl;
+    hopfield_network.print_state(10);
     return 0;
 }

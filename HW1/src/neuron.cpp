@@ -1,8 +1,8 @@
 #include "neuron.h"
+#include <iostream>
 
-Neuron::Neuron(vector<double>& neuron_weights, double threshold)
-    : neuron_weights(neuron_weights), threshold(threshold) {
-}
+Neuron::Neuron(int state, vector<double>& neuron_weights)
+    : state(state), neuron_weights(neuron_weights) {}
 
 void Neuron::update_state(const vector<double> input_signals) {
     double sum = 0;
@@ -10,7 +10,16 @@ void Neuron::update_state(const vector<double> input_signals) {
         sum += input_signals[i] * neuron_weights[i];
     }
 
-    if (sum == this->threshold) {
-        this->state = 1;
-    } else this->state = (sum > threshold) ? 1 : -1;
+    if (sum == 0) {
+        cout << "sum is 0" << endl;
+        set_state(1);
+    } else set_state((sum > 0) ? 1 : -1);
 };
+
+void Neuron::set_state(int state) {
+    this->state = state;
+}
+
+int Neuron::get_state() {
+    return this->state;
+}

@@ -11,10 +11,12 @@ class HopfieldNetwork {
         void train(vector<vector<int>> patterns);
         vector<int> recall(vector<vector<int>> distorted_patterns);
         void print_weights();
+        void print_state(int nr_columns);
+        void feed_distorted_pattern(vector<int> distorted_pattern);
+        void update_neurons();
     private:
-        bool check_convergence();
-        int classify();
+        void check_convergence();
         vector<vector<double>> weights;
-        vector<vector<Neuron>> neurons;
+        vector<Neuron> neurons;
         size_t nr_neurons;
 };
