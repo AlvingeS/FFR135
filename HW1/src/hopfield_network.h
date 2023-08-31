@@ -3,24 +3,28 @@
 #include<string>
 #include "neuron.h"
 
-typedef std::vector<std::vector<int>> vector2d_int;
-typedef std::vector<std::vector<double>> vector2d_double;
+typedef std::vector<int> state;
+typedef std::vector<state> state_vector;
+typedef std::vector<std::vector<double>> W;
 
 class HopfieldNetwork {
     public:
-        HopfieldNetwork(int num_neurons);
-        void train(vector2d_int patterns);
-        std::vector<int> recall(vector2d_int distorted_patterns);
-        const void print_weights();
-        const void print_state(int nr_columns);
-        void feed_distorted_pattern(std::vector<int> distorted_pattern);
-        void update_neurons(bool print);
-        std::vector<int> get_state();
-        int classify_state(vector2d_int patterns);
+        HopfieldNetwork();
+        state get_state();
+        void train(const state_vector patterns);
+        void feed_distorted_pattern(const state distorted_pattern);
+        void recall(bool print = false);
+        int classify_state(const state_vector patterns);
+        
+        void print_weights();
+        void print_state();
     private:
-        size_t num_neurons;
-        vector2d_double weights;
+        const size_t num_neurons = 160;
+        const size_t num_columns = 10;
         std::vector<Neuron> neurons;
+        W weights;
+
+        int calculate_state_differences(const state current_state, const state new_state);
+        void update_neurons(const bool print);
         std::string convert_for_printing(int state);
-        void check_convergence();
 };

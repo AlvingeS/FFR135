@@ -4,8 +4,8 @@
 #include <iostream>
 
 // Constructor for hopfield network
-HopfieldNetwork::HopfieldNetwork(int num_neurons)
-    : num_neurons(num_neurons), weights(vector2d_double(num_neurons, std::vector<double>(num_neurons, 0))) {
+HopfieldNetwork::HopfieldNetwork()
+    : weights(W(num_neurons, std::vector<double>(num_neurons, 0))) {
 
     // Gives neurons a reference to one vector of weights each
     this->neurons.reserve(num_neurons);
@@ -15,7 +15,7 @@ HopfieldNetwork::HopfieldNetwork(int num_neurons)
 }
 
 // Trains the hopfield network on a set of patterns using Hebb's rule
-void HopfieldNetwork::train(vector2d_int patterns) {
+void HopfieldNetwork::train(state_vector patterns) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         for (size_t j = 0; j < this->num_neurons; j++) {
             if (i != j) {
@@ -31,13 +31,8 @@ void HopfieldNetwork::train(vector2d_int patterns) {
     }
 }
 
-std::vector<int> HopfieldNetwork::recall(vector2d_int distorted_patterns) {
-    std::vector<int> classified_numbers(distorted_patterns.size(), 0);
-    return classified_numbers;
-}
-
 // Feeds a distorted pattern to the hopfield network by setting the state of the neurons
-void HopfieldNetwork::feed_distorted_pattern(std::vector<int> distorted_pattern) {
+void HopfieldNetwork::feed_distorted_pattern(state distorted_pattern) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         this->neurons[i].set_state(distorted_pattern[i]);
     }
@@ -55,14 +50,14 @@ void HopfieldNetwork::update_neurons(bool print) {
         this->neurons[i].update_state(input_signals);
 
         if (print) {
-            print_state(10);
+            print_state();
         }
     }
 }
 
 // Returns the state of the neurons in the hopfield network
-std::vector<int> HopfieldNetwork::get_state() {
-    std::vector<int> state(this->num_neurons, 0);
+state HopfieldNetwork::get_state() {
+    state state(this->num_neurons, 0);
 
     for (size_t i = 0; i < this->num_neurons; i++) {
         state[i] = this->neurons[i].get_state();
@@ -71,9 +66,46 @@ std::vector<int> HopfieldNetwork::get_state() {
     return state;
 }
 
+void HopfieldNetwork::recall(bool print) {
+
+    int counter = 0;
+
+    while (true) {
+        state current_state = get_state();
+        update_neurons(false);
+
+        if (print) {
+            print_state();
+        }
+
+        state new_state = get_state();
+
+        if (calculate_state_differences(current_state, new_state) == 0) {
+            break;
+        }
+
+        counter++;
+    }
+
+    std::cout << "Number of iterations: " << counter << std::endl;
+}
+
+// Calculates the number of differences between two states
+int HopfieldNetwork::calculate_state_differences(const state previous_state, const state current_state) {
+    int counter = 0;
+
+    for (size_t i = 0; i < this->num_neurons; i++) {
+        if (previous_state[i] != current_state[i]) {
+            counter++;
+        }
+    }
+
+    return counter;
+}
+
 // Classifies the a steady state to see if it matches any of the patterns
-int HopfieldNetwork::classify_state(vector2d_int patterns) {
-    std::vector<int> state = get_state();
+int HopfieldNetwork::classify_state(state_vector patterns) {
+    state state = get_state();
 
     int counter = 1;
 
@@ -88,7 +120,7 @@ int HopfieldNetwork::classify_state(vector2d_int patterns) {
 }
 
 // Prints the weights of the hopfield network (For debugging purposes)
-const void HopfieldNetwork::print_weights() {
+void HopfieldNetwork::print_weights() {
     for (const auto& row : this->weights) {
         for (const auto& weight : row) {
             std::cout << weight << " ";
@@ -108,7 +140,7 @@ std::string HopfieldNetwork::convert_for_printing(int state) {
 
 // Prints the state of the neurons in the hopfield network
 // Flushes the screen to see the evolution of the state
-const void HopfieldNetwork::print_state(int nr_columns) {
+void HopfieldNetwork::print_state() {
     std::cout << "\033[2J\033[1;1H";  // Clear screen and move cursor to top-left corner
 
     int counter = 0;
@@ -116,7 +148,7 @@ const void HopfieldNetwork::print_state(int nr_columns) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         std::cout << convert_for_printing(this->neurons[i].get_state()) << " ";
 
-        if (++counter % nr_columns == 0) {
+        if (++counter % this->num_columns == 0) {
             std::cout << std::endl;
             counter = 0;
         }

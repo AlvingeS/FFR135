@@ -4,30 +4,31 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <cstdlib>
 
 // Converts patterns from a file to a vectors of integers
-vector2d_int parse_patterns(const std::string& filename) {
-    vector2d_int patterns;
+state_vector parse_patterns(const std::string& filename) {
+    state_vector patterns;
     std::ifstream file(filename);
     std::string line;
 
     while (std::getline(file, line)) {
-        std::vector<int> vector;
+        state new_state;
         std::stringstream ss(line);
         std::string token;
 
         while (std::getline(ss, token, ',')) {
-            vector.push_back(std::stoi(token));
+            new_state.push_back(std::stoi(token));
         }
 
-        patterns.push_back(vector);
+        patterns.push_back(new_state);
     }
 
     return patterns;
 }
 
 // Converts a state to a pattern string
-std::string convert_state_to_scheme(const std::vector<int>& state) {
+std::string convert_state_to_scheme(const state& state) {
     std::stringstream ss;
     ss << '[';
 
@@ -56,22 +57,27 @@ std::string convert_state_to_scheme(const std::vector<int>& state) {
     return ss.str();
 }
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    // Convert the argument to an integer
+    int distorted_pattern_index = std::atoi(argv[1]);
 
     // Load patterns from file
-    vector2d_int patterns = parse_patterns("patterns.txt");
-    vector2d_int distorted_patterns = parse_patterns("distorted_patterns.txt");
+    state_vector patterns = parse_patterns("patterns.txt");
+    state_vector distorted_patterns = parse_patterns("distorted_patterns.txt");
 
     // Create and train hopfield network with 10*16 neurons
-    HopfieldNetwork hopfield_network = HopfieldNetwork(10*16);
+    HopfieldNetwork hopfield_network = HopfieldNetwork();
     hopfield_network.train(patterns);
     
     // Feed distorted pattern to hopfield network, setting the initial state
-    hopfield_network.feed_distorted_pattern(distorted_patterns[1]);
+    hopfield_network.feed_distorted_pattern(distorted_patterns[distorted_pattern_index]);
 
+    // Update state of network until it converges
+    hopfield_network.recall();
 
-    hopfield_network.update_neurons(false);
-    //std::cout << convert_state_to_scheme(hopfield_network.get_state()) << std::endl;
+    // Print the steady state
+    std::cout << convert_state_to_scheme(hopfield_network.get_state()) << std::endl;
     
     // Print the classification of the steady state
     std::cout << hopfield_network.classify_state(patterns) << std::endl;
