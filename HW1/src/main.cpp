@@ -5,6 +5,7 @@
 #include <fstream>
 #include <sstream>
 
+// Converts patterns from a file to a vectors of integers
 vector2d_int parse_patterns(const std::string& filename) {
     vector2d_int patterns;
     std::ifstream file(filename);
@@ -25,14 +26,34 @@ vector2d_int parse_patterns(const std::string& filename) {
     return patterns;
 }
 
-void print_patterns(vector2d_int patterns) {
-    for (const auto& pattern : patterns) {
-        std::cout << "Pattern: ";
-        for (const auto& value : pattern) {
-            std::cout << value << " ";
+// Converts a state to a pattern string
+std::string convert_state_to_scheme(const std::vector<int>& state) {
+    std::stringstream ss;
+    ss << '[';
+
+    for (size_t i = 0; i < state.size(); ++i) {
+        if (i % 10 == 0) {
+            ss << '[';
         }
-        std::cout << std::endl;
+
+        ss << state[i];
+
+        if ((i + 1) % 10 == 0 && i != 0) {
+            ss << ']';
+            if (i != state.size() - 1) {
+                ss << ", ";
+            }
+        } else if (i < state.size() - 1) {
+            ss << ", ";
+        }
     }
+
+    if (state.size() % 10 != 0) {
+        ss << ']';
+    }
+    
+    ss << ']';  // The last ']' is to close the overall bracket
+    return ss.str();
 }
 
 int main() {
@@ -45,9 +66,8 @@ int main() {
     // hopfield_network.print_weights();
     
     hopfield_network.feed_distorted_pattern(distorted_patterns[2]);
-    hopfield_network.print_state(10);
     hopfield_network.update_neurons();
-    std::cout << "----------------------------" << std::endl;
-    hopfield_network.print_state(10);
+    std::cout << convert_state_to_scheme(hopfield_network.get_state()) << std::endl;
+
     return 0;
 }

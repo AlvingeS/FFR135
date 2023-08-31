@@ -15,6 +15,7 @@ class HopfieldNetwork {
         const void print_state(int nr_columns);
         void feed_distorted_pattern(std::vector<int> distorted_pattern);
         void update_neurons();
+        std::vector<int> get_state();
     private:
         size_t num_neurons;
         vector2d_double weights;

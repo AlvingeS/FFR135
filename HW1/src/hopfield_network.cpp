@@ -3,15 +3,18 @@
 #include "neuron.h"
 #include <iostream>
 
+// Constructor for hopfield network
 HopfieldNetwork::HopfieldNetwork(int num_neurons)
     : num_neurons(num_neurons), weights(vector2d_double(num_neurons, std::vector<double>(num_neurons, 0))) {
 
+    // Gives neurons a reference to one vector of weights each
     this->neurons.reserve(num_neurons);
     for (size_t i = 0; i < num_neurons; i++) {
         this->neurons.emplace_back(Neuron(0, this->weights[i]));
     }
 }
 
+// Trains the hopfield network on a set of patterns using Hebb's rule
 void HopfieldNetwork::train(vector2d_int patterns) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         for (size_t j = 0; j < this->num_neurons; j++) {
@@ -33,12 +36,14 @@ std::vector<int> HopfieldNetwork::recall(vector2d_int distorted_patterns) {
     return classified_numbers;
 }
 
+// Feeds a distorted pattern to the hopfield network by setting the state of the neurons
 void HopfieldNetwork::feed_distorted_pattern(std::vector<int> distorted_pattern) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         this->neurons[i].set_state(distorted_pattern[i]);
     }
 }
 
+// Updates the state of the neurons in the hopfield network asynchronously
 void HopfieldNetwork::update_neurons() {
     for (size_t i = 0; i < this->num_neurons; i++) {
         std::vector<double> input_signals(this->num_neurons, 0);
@@ -53,6 +58,18 @@ void HopfieldNetwork::update_neurons() {
     }
 }
 
+// Returns the state of the neurons in the hopfield network
+std::vector<int> HopfieldNetwork::get_state() {
+    std::vector<int> state(this->num_neurons, 0);
+
+    for (size_t i = 0; i < this->num_neurons; i++) {
+        state[i] = this->neurons[i].get_state();
+    }
+
+    return state;
+}
+
+// Prints the weights of the hopfield network (For debugging purposes)
 const void HopfieldNetwork::print_weights() {
     for (const auto& row : this->weights) {
         for (const auto& weight : row) {
@@ -62,6 +79,7 @@ const void HopfieldNetwork::print_weights() {
     }
 }
 
+// Converts a state to an easy-to-read string
 std::string HopfieldNetwork::convert_for_printing(int state) {
     if (state == 1) {
         return "X";
@@ -70,6 +88,8 @@ std::string HopfieldNetwork::convert_for_printing(int state) {
     }
 }
 
+// Prints the state of the neurons in the hopfield network
+// Flushes the screen to see the evolution of the state
 const void HopfieldNetwork::print_state(int nr_columns) {
     std::cout << "\033[2J\033[1;1H";  // Clear screen and move cursor to top-left corner
 
@@ -85,6 +105,5 @@ const void HopfieldNetwork::print_state(int nr_columns) {
     }
     std::cout << std::endl;
     
-    // Optional: add a short sleep to make the evolution easier to follow
-    usleep(10000);  // Sleep for 500,000 microseconds (0.5 seconds)
+    usleep(10000);
 }
