@@ -44,7 +44,7 @@ void HopfieldNetwork::feed_distorted_pattern(std::vector<int> distorted_pattern)
 }
 
 // Updates the state of the neurons in the hopfield network asynchronously
-void HopfieldNetwork::update_neurons() {
+void HopfieldNetwork::update_neurons(bool print) {
     for (size_t i = 0; i < this->num_neurons; i++) {
         std::vector<double> input_signals(this->num_neurons, 0);
 
@@ -54,7 +54,9 @@ void HopfieldNetwork::update_neurons() {
 
         this->neurons[i].update_state(input_signals);
 
-        print_state(10);
+        if (print) {
+            print_state(10);
+        }
     }
 }
 
@@ -67,6 +69,22 @@ std::vector<int> HopfieldNetwork::get_state() {
     }
 
     return state;
+}
+
+// Classifies the a steady state to see if it matches any of the patterns
+int HopfieldNetwork::classify_state(vector2d_int patterns) {
+    std::vector<int> state = get_state();
+
+    int counter = 1;
+
+    for (const auto& pattern : patterns) {
+        if (state == pattern) {
+            return counter;
+        }
+        counter++;
+    }
+
+    return 6;
 }
 
 // Prints the weights of the hopfield network (For debugging purposes)
@@ -105,5 +123,5 @@ const void HopfieldNetwork::print_state(int nr_columns) {
     }
     std::cout << std::endl;
     
-    usleep(10000);
+    usleep(5000);
 }
