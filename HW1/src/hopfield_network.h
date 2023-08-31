@@ -1,22 +1,24 @@
+#pragma once
 #include<vector>
+#include<string>
 #include "neuron.h"
 
-#pragma once
-
-using namespace std;
+typedef std::vector<std::vector<int>> vector2d_int;
+typedef std::vector<std::vector<double>> vector2d_double;
 
 class HopfieldNetwork {
     public:
-        HopfieldNetwork(int nr_neurons);
-        void train(vector<vector<int>> patterns);
-        vector<int> recall(vector<vector<int>> distorted_patterns);
-        void print_weights();
-        void print_state(int nr_columns);
-        void feed_distorted_pattern(vector<int> distorted_pattern);
+        HopfieldNetwork(int num_neurons);
+        void train(vector2d_int patterns);
+        std::vector<int> recall(vector2d_int distorted_patterns);
+        const void print_weights();
+        const void print_state(int nr_columns);
+        void feed_distorted_pattern(std::vector<int> distorted_pattern);
         void update_neurons();
     private:
+        size_t num_neurons;
+        vector2d_double weights;
+        std::vector<Neuron> neurons;
+        std::string convert_for_printing(int state);
         void check_convergence();
-        vector<vector<double>> weights;
-        vector<Neuron> neurons;
-        size_t nr_neurons;
 };

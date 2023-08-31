@@ -3,18 +3,18 @@
 #include "neuron.h"
 #include <iostream>
 
-HopfieldNetwork::HopfieldNetwork(int nr_neurons)
-    : nr_neurons(nr_neurons) {
-    this->weights = vector<vector<double>>(nr_neurons, vector<double>(nr_neurons, 0));
+HopfieldNetwork::HopfieldNetwork(int num_neurons)
+    : num_neurons(num_neurons), weights(vector2d_double(num_neurons, std::vector<double>(num_neurons, 0))) {
 
-    for (size_t i = 0; i < nr_neurons; i++) {
-        this->neurons.push_back(Neuron(0, this->weights[i]));
+    this->neurons.reserve(num_neurons);
+    for (size_t i = 0; i < num_neurons; i++) {
+        this->neurons.emplace_back(Neuron(0, this->weights[i]));
     }
 }
 
-void HopfieldNetwork::train(vector<vector<int>> patterns) {
-    for (size_t i = 0; i < this->nr_neurons; i++) {
-        for (size_t j = 0; j < this->nr_neurons; j++) {
+void HopfieldNetwork::train(vector2d_int patterns) {
+    for (size_t i = 0; i < this->num_neurons; i++) {
+        for (size_t j = 0; j < this->num_neurons; j++) {
             if (i != j) {
                 double sum = 0;
 
@@ -22,28 +22,28 @@ void HopfieldNetwork::train(vector<vector<int>> patterns) {
                     sum += pattern[i] * pattern[j];
                 }
 
-                this->weights[i][j] = sum / this->nr_neurons;
+                this->weights[i][j] = sum / this->num_neurons;
             }
         }
     }
 }
 
-vector<int> HopfieldNetwork::recall(vector<vector<int>> distorted_patterns) {
-    vector<int> classified_numbers(distorted_patterns.size(), 0);
+std::vector<int> HopfieldNetwork::recall(vector2d_int distorted_patterns) {
+    std::vector<int> classified_numbers(distorted_patterns.size(), 0);
     return classified_numbers;
 }
 
-void HopfieldNetwork::feed_distorted_pattern(vector<int> distorted_pattern) {
-    for (size_t i = 0; i < this->nr_neurons; i++) {
+void HopfieldNetwork::feed_distorted_pattern(std::vector<int> distorted_pattern) {
+    for (size_t i = 0; i < this->num_neurons; i++) {
         this->neurons[i].set_state(distorted_pattern[i]);
     }
 }
 
 void HopfieldNetwork::update_neurons() {
-    for (size_t i = 0; i < this->nr_neurons; i++) {
-        vector<double> input_signals(this->nr_neurons, 0);
+    for (size_t i = 0; i < this->num_neurons; i++) {
+        std::vector<double> input_signals(this->num_neurons, 0);
 
-        for (size_t j = 0; j < this->nr_neurons; j++) {
+        for (size_t j = 0; j < this->num_neurons; j++) {
             input_signals[j] = this->neurons[j].get_state();
         }
 
@@ -53,16 +53,16 @@ void HopfieldNetwork::update_neurons() {
     }
 }
 
-void HopfieldNetwork::print_weights() {
+const void HopfieldNetwork::print_weights() {
     for (const auto& row : this->weights) {
         for (const auto& weight : row) {
-            cout << weight << " ";
+            std::cout << weight << " ";
         }
-        cout << endl;
+        std::cout << std::endl;
     }
 }
 
-string convert_for_printing(int state) {
+std::string HopfieldNetwork::convert_for_printing(int state) {
     if (state == 1) {
         return "X";
     } else {
@@ -70,21 +70,21 @@ string convert_for_printing(int state) {
     }
 }
 
-void HopfieldNetwork::print_state(int nr_columns) {
-    cout << "\033[2J\033[1;1H";  // Clear screen and move cursor to top-left corner
+const void HopfieldNetwork::print_state(int nr_columns) {
+    std::cout << "\033[2J\033[1;1H";  // Clear screen and move cursor to top-left corner
 
     int counter = 0;
 
-    for (size_t i = 0; i < this->nr_neurons; i++) {
-        cout << convert_for_printing(this->neurons[i].get_state()) << " ";
+    for (size_t i = 0; i < this->num_neurons; i++) {
+        std::cout << convert_for_printing(this->neurons[i].get_state()) << " ";
 
         if (++counter % nr_columns == 0) {
-            cout << endl;
+            std::cout << std::endl;
             counter = 0;
         }
     }
-    cout << endl;
+    std::cout << std::endl;
     
     // Optional: add a short sleep to make the evolution easier to follow
-    usleep(25000);  // Sleep for 500,000 microseconds (0.5 seconds)
+    usleep(10000);  // Sleep for 500,000 microseconds (0.5 seconds)
 }
