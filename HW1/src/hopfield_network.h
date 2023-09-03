@@ -14,10 +14,7 @@ class HopfieldNetwork {
         void train(const state_vector patterns);
         void feed_distorted_pattern(const state distorted_pattern);
         void recall(bool print = false);
-        int classify_state(const state_vector patterns);
-        
-        void print_weights();
-        void print_state();
+        int classify_state(const state_vector patterns); 
     private:
         const size_t num_neurons = 160;
         const size_t num_columns = 10;
@@ -26,5 +23,4 @@ class HopfieldNetwork {
 
         int calculate_state_differences(const state current_state, const state new_state);
         void update_neurons(const bool print);
-        std::string convert_for_printing(int state);
 };

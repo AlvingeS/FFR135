@@ -1,6 +1,5 @@
 #include "hopfield_network.h"
-#include <unistd.h>
-#include "neuron.h"
+#include "utils.h"
 #include <iostream>
 
 // Constructor for hopfield network
@@ -50,7 +49,9 @@ void HopfieldNetwork::update_neurons(bool print) {
         this->neurons[i].update_state(input_signals);
 
         if (print) {
-            print_state();
+            
+
+            print_state(this->num_neurons, this->num_columns, get_state());
         }
     }
 }
@@ -66,16 +67,14 @@ state HopfieldNetwork::get_state() {
     return state;
 }
 
+// Recalls a pattern from the hopfield network until it reaches a steady state
 void HopfieldNetwork::recall(bool print) {
-
-    int counter = 0;
-
     while (true) {
         state current_state = get_state();
         update_neurons(false);
 
         if (print) {
-            print_state();
+            print_state(this->num_neurons, this->num_columns, get_state());
         }
 
         state new_state = get_state();
@@ -83,11 +82,7 @@ void HopfieldNetwork::recall(bool print) {
         if (calculate_state_differences(current_state, new_state) == 0) {
             break;
         }
-
-        counter++;
     }
-
-    std::cout << "Number of iterations: " << counter << std::endl;
 }
 
 // Calculates the number of differences between two states
@@ -117,43 +112,4 @@ int HopfieldNetwork::classify_state(state_vector patterns) {
     }
 
     return 6;
-}
-
-// Prints the weights of the hopfield network (For debugging purposes)
-void HopfieldNetwork::print_weights() {
-    for (const auto& row : this->weights) {
-        for (const auto& weight : row) {
-            std::cout << weight << " ";
-        }
-        std::cout << std::endl;
-    }
-}
-
-// Converts a state to an easy-to-read string
-std::string HopfieldNetwork::convert_for_printing(int state) {
-    if (state == 1) {
-        return "X";
-    } else {
-        return " ";
-    }
-}
-
-// Prints the state of the neurons in the hopfield network
-// Flushes the screen to see the evolution of the state
-void HopfieldNetwork::print_state() {
-    std::cout << "\033[2J\033[1;1H";  // Clear screen and move cursor to top-left corner
-
-    int counter = 0;
-
-    for (size_t i = 0; i < this->num_neurons; i++) {
-        std::cout << convert_for_printing(this->neurons[i].get_state()) << " ";
-
-        if (++counter % this->num_columns == 0) {
-            std::cout << std::endl;
-            counter = 0;
-        }
-    }
-    std::cout << std::endl;
-    
-    usleep(5000);
-}
+};
