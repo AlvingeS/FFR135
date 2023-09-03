@@ -3,7 +3,7 @@
 #include <random>
 #include <iostream>
 
-const size_t n_dim = 5;
+const size_t n_dim = 2;
 const size_t num_samples = 10000;
 const size_t num_epoch = 20;
 const double learning_rate = 0.05;
@@ -36,14 +36,28 @@ std::vector<int> generate_random_target_values(int n) {
     }
 
     return target_values;
-}  
+}
+
+void print_matrix(std::vector<std::vector<int>> matrix) {
+    for (size_t i = 0; i < matrix.size(); i++) {
+        for (size_t j = 0; j < matrix[i].size(); j++) {
+            std::cout << matrix[i][j] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+}
 
 // main function for P2
 int main() {
-    for (size_t n = 2; n < n_dim + 1; n++) {
+    for (size_t n = 1; n <= n_dim; n++) {
 
         std::vector<std::vector<int>> all_possible_inputs = generate_all_possible_inputs(n);
         std::vector<int> target_values = generate_random_target_values(n);
+
+        // print_matrix(all_possible_inputs);
+        // print_matrix(std::vector<std::vector<int>>({target_values}));
 
         Perceptron perceptron(n);
         int num_separable_functions = 0;
@@ -58,6 +72,6 @@ int main() {
             }
         }
 
-        std::cout << "Number of separable functions for n = " << n << ": " << num_separable_functions << std::endl;
+        // std::cout << "Number of separable functions for n = " << n << ": " << num_separable_functions << std::endl;
     }
 }
