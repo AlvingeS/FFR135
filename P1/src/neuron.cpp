@@ -7,7 +7,7 @@ Neuron::Neuron(int state, vector_double_ref neuron_weights)
 // Calculates the new state of the neuron based on the input signals
 void Neuron::update_state(const std::vector<double> input_signals) {
     double sum = 0;
-    for (std::size_t i = 0; i < input_signals.size(); i++) {
+    for (size_t i = 0; i < input_signals.size(); i++) {
         sum += input_signals[i] * neuron_weights[i];
     }
 
