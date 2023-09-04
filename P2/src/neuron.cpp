@@ -15,7 +15,7 @@ void Neuron::update_state(std::vector<int> input_signals) {
     // The state is set to 1 if the sum is geq to bias, otherwise set to 0
     if (sum >= this->bias) {
         set_state(1);
-    } else set_state(0);
+    } else set_state(-1);
 };
 
 // Setter
