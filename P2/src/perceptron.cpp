@@ -28,6 +28,7 @@ void Perceptron::train(size_t num_epoch, double learning_rate, std::vector<std::
             std::vector<int> input = all_possible_inputs[i];
             this->output_neuron.update_state(input);
 
+            // Iterative update of the weights and bias
             for (size_t j = 0; j < this->num_inputs; j++) {
                 this->weights[j] += learning_rate*(target_values[i] - this->output_neuron.get_state())*input[j];
                 this->output_neuron.set_bias(this->output_neuron.get_bias() - learning_rate*(target_values[i] - this->output_neuron.get_state()));

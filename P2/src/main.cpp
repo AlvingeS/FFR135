@@ -9,6 +9,7 @@ const size_t num_samples = 10000;
 const size_t num_epoch = 20;
 const double learning_rate = 0.05;
 
+// Generates all possible inputs for the perceptron
 std::vector<std::vector<int>> generate_all_possible_inputs(int n) {
     std::vector<std::vector<int>> all_possible_inputs(std::pow(2, n), std::vector<int>(n));
 
@@ -30,6 +31,7 @@ std::bitset<32> generate_random_bitset(int n, std::mt19937 &gen) {
     return std::bitset<32>(dis(gen));
 }
 
+// Parses the bitset to a vector of target values
 std::vector<int> parse_bitset_to_vector(std::bitset<32> bitset, int n) {
     std::vector<int> target_values(std::pow(2, n));
 
@@ -40,16 +42,6 @@ std::vector<int> parse_bitset_to_vector(std::bitset<32> bitset, int n) {
     return target_values;
 }
 
-void print_matrix(std::vector<std::vector<int>> matrix) {
-    for (size_t i = 0; i < matrix.size(); i++) {
-        for (size_t j = 0; j < matrix[i].size(); j++) {
-            std::cout << matrix[i][j] << " ";
-        }
-        std::cout << std::endl;
-    }
-
-    std::cout << std::endl;
-}
 
 // main function for P2
 int main() {
@@ -58,11 +50,9 @@ int main() {
 
     for (size_t n = 2; n <= n_dim; n++) {
 
+        // Memory for storing the tested functions and all possible inputs
         std::unordered_set<std::bitset<32>> *tested_functions = new std::unordered_set<std::bitset<32>>();
         std::vector<std::vector<int>> *all_possible_inputs = new std::vector<std::vector<int>>(generate_all_possible_inputs(n));
-
-        // print_matrix(all_possible_inputs);
-        // print_matrix(std::vector<std::vector<int>>({target_values}));
 
         int num_separable_functions = 0;
 
@@ -70,14 +60,15 @@ int main() {
             Perceptron perceptron(n);
             std::bitset<32> bitset = generate_random_bitset(n, gen);
 
+            // If the function has already been tested, skip it
             if (tested_functions->find(bitset) != tested_functions->end()) {
                 continue; 
             } else {
                 tested_functions->insert(bitset);
             }
 
+            // Parse the bitset, train and test the perceptron
             std::vector<int> target_values = parse_bitset_to_vector(bitset, n);
-
             perceptron.train(num_epoch, learning_rate, *all_possible_inputs, target_values);
             bool function_separable = perceptron.test_if_separable(*all_possible_inputs, target_values);
 
@@ -85,6 +76,7 @@ int main() {
                 num_separable_functions++;
             }
 
+            // If all possible functions have been tested, stop
             if (tested_functions->size() == std::pow(2, std::pow(2, n))) {
                 break;
             }
