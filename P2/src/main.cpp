@@ -11,35 +11,26 @@ const size_t num_samples = 10000;
 const size_t num_epoch = 20;
 const double learning_rate = 0.05;
 
-std::vector<std::vector<int>> generate_all_possible_inputs(int n) {
-    std::vector<std::vector<int>> all_possible_inputs(std::pow(2, n), std::vector<int>(n));
-
-    for (size_t i = 0; i < std::pow(2, n); i++) {
+void generate_all_possible_inputs(size_t &n, uint64_t &num_possible_inputs, std::vector<std::vector<int>>& all_possible_inputs) {
+    for (size_t i = 0; i < num_possible_inputs; i++) {
         std::bitset<32> bits(i);
 
         for (size_t j = 0; j < n; j++) {
             all_possible_inputs[i][j] = bits[j];
         }
     }
-
-    return all_possible_inputs;
 }
 
-// Generates the binary target values for the perceptron
-std::bitset<32> generate_random_bitset(int n, std::mt19937 &gen) {
-    std::uniform_int_distribution<uint64_t> dis(0, std::pow(2, std::pow(2, n)) - 1);
+void generate_random_bitset(uint64_t num_possible_functions, std::mt19937 &gen, std::bitset<32> &bitset) {
+    std::uniform_int_distribution<uint64_t> dis(0, num_possible_functions - 1);
 
-    return std::bitset<32>(dis(gen));
+    bitset = std::bitset<32>(dis(gen));
 }
 
-std::vector<int> parse_bitset_to_vector(std::bitset<32> bitset, int n) {
-    std::vector<int> target_values(std::pow(2, n));
-
-    for (size_t i = 0; i < std::pow(2, n); i++) {
+ void parse_bitset_to_vector(std::bitset<32> bitset, size_t &n, std::vector<int>& target_values) {
+    for (size_t i = 0; i < n; i++) {
         target_values[i] = bitset[i] == 1 ? 1 : -1;
     }
-
-    return target_values;
 }
 
 void print_matrix(std::vector<std::vector<int>> matrix) {
@@ -57,46 +48,46 @@ void print_matrix(std::vector<std::vector<int>> matrix) {
 int main() {
     std::random_device rd;
     std::mt19937 gen(rd());
+    std::bitset<32> bitset;
 
     for (size_t n = 2; n <= n_dim; n++) {
+        uint64_t num_possible_functions = std::pow(2, std::pow(2, n));
+        uint64_t num_possible_inputs = std::pow(2, n);
 
-        std::unordered_set<std::bitset<32>> *tested_functions = new std::unordered_set<std::bitset<32>>();
-        std::vector<std::vector<int>> *all_possible_inputs = new std::vector<std::vector<int>>(generate_all_possible_inputs(n));
+        std::vector<int> target_values(n);
+        std::vector<std::vector<int>> all_possible_inputs(num_possible_inputs, std::vector<int>(n));
 
-        // print_matrix(all_possible_inputs);
-        // print_matrix(std::vector<std::vector<int>>({target_values}));
+        std::unordered_set<std::bitset<32>> tested_functions;
+        generate_all_possible_inputs(n, num_possible_inputs, all_possible_inputs);
 
         int num_separable_functions = 0;
 
         for (size_t i = 0; i < num_samples; i++) {
             Perceptron perceptron(n);
-            std::bitset<32> bitset = generate_random_bitset(n, gen);
+            generate_random_bitset(num_possible_functions, gen, bitset);
 
-            if (tested_functions->find(bitset) != tested_functions->end()) {
+            if (tested_functions.find(bitset) != tested_functions.end()) {
                 continue; 
             } else {
-                tested_functions->insert(bitset);
+                tested_functions.insert(bitset);
             }
+            
+            parse_bitset_to_vector(bitset, n, target_values);
 
-            std::vector<int> target_values = parse_bitset_to_vector(bitset, n);
-
-            perceptron.train(num_epoch, learning_rate, *all_possible_inputs, target_values);
-            bool function_separable = perceptron.test_if_separable(*all_possible_inputs, target_values);
+            perceptron.train(num_possible_inputs, num_epoch, learning_rate, all_possible_inputs, target_values);
+            bool function_separable = perceptron.test_if_separable(all_possible_inputs, target_values);
 
             if (function_separable) {
                 num_separable_functions++;
             }
 
-            if (tested_functions->size() == std::pow(2, std::pow(2, n))) {
+            if (tested_functions.size() == num_possible_functions) {
                 break;
             }
         }
 
-        std::cout << "# Separable funcs for n = " << n << ": " << num_separable_functions
-                  << " of " << std::pow(2, std::pow(2, n)) << " possible functions"
-                  << " where " << tested_functions->size() << " where examined " << std::endl;
-       
-        delete tested_functions;
-        delete all_possible_inputs;
+        std::cout << "#Separable funcs for n = " << n << ": " << num_separable_functions
+                  << " of " << num_possible_functions << " possible functions"
+                  << " where " << tested_functions.size() << " where examined " << std::endl;
     }
 }

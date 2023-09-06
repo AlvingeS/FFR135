@@ -17,23 +17,3 @@ void Neuron::update_state(std::vector<int> input_signals) {
         set_state(1);
     } else set_state(-1);
 };
-
-// Setter
-void Neuron::set_state(int state) {
-    this->state = state;
-}
-
-// Getter
-int Neuron::get_state() {
-    return this->state;
-}
-
-// Setter
-void Neuron::set_bias(double bias) {
-    this->bias = bias;
-}
-
-// Getter
-double Neuron::get_bias() {
-    return this->bias;
-}

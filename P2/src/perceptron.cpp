@@ -4,6 +4,7 @@
 #include <random>
 #include <cmath>
 #include <bitset>
+#include <iostream>
 
 // Constructor for perceptron
 Perceptron::Perceptron(size_t num_inputs)
@@ -22,9 +23,9 @@ Perceptron::Perceptron(size_t num_inputs)
 }
 
 // Trains the perceptron for a given number of epochs
-void Perceptron::train(size_t num_epoch, double learning_rate, std::vector<std::vector<int>> all_possible_inputs, std::vector<int> target_values) {
+void Perceptron::train(uint64_t &num_possible_inputs, size_t num_epoch, double learning_rate, std::vector<std::vector<int>> &all_possible_inputs, std::vector<int> &target_values) {
     for (size_t e = 0; e < num_epoch; e++) {
-        for (size_t i = 0; i < std::pow(2, this->num_inputs); i++) {
+        for (size_t i = 0; i < num_possible_inputs; i++) {
             std::vector<int> input = all_possible_inputs[i];
             this->output_neuron.update_state(input);
 
@@ -37,7 +38,7 @@ void Perceptron::train(size_t num_epoch, double learning_rate, std::vector<std::
 }
 
 // Tests if the perceptron is able to separate the input values
-bool Perceptron::test_if_separable(std::vector<std::vector<int>> all_possible_inputs, std::vector<int> target_values) {
+bool Perceptron::test_if_separable(std::vector<std::vector<int>> &all_possible_inputs, std::vector<int> &target_values) {
     for (size_t i = 0; i < std::pow(2, this->num_inputs); i++) {
         std::vector<int> input = all_possible_inputs[i];
         this->output_neuron.update_state(input);

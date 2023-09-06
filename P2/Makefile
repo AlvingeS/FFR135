@@ -1,5 +1,8 @@
 CC = clang++
-CFLAGS = -std=c++17 -Wall
+CFLAGS = -std=c++17 -Wall -O2
+ifdef PROFILE
+  CFLAGS += -pg
+endif
 SRC_DIR = src/
 OBJ_DIR = obj/
 
