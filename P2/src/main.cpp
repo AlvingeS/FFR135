@@ -4,6 +4,8 @@
 #include <iostream>
 #include <unordered_set>
 
+// hyperfine ./main --warmup 2 gave 3.213s on laptop
+
 const size_t n_dim = 5;
 const size_t num_samples = 10000;
 const size_t num_epoch = 20;
