@@ -1,7 +1,9 @@
-#include <cstddef>
-#include <cstdint>
+#pragma once
+
 #include "neuron.h"
+#include <cstddef>
 #include <vector>
+#include <cstdint>
 
 typedef std::vector<double> weights_vector;
 

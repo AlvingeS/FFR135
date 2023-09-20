@@ -1,9 +1,7 @@
 #include "perceptron.h"
 #include "neuron.h"
-#include <cstddef>
 #include <random>
 #include <cmath>
-#include <bitset>
 #include <iostream>
 
 // Constructor for perceptron
