@@ -24,7 +24,7 @@ Perceptron::Perceptron(size_t num_inputs)
 void Perceptron::train(uint64_t num_possible_inputs, size_t num_epoch, double learning_rate, std::vector<std::vector<int>> &all_possible_inputs, std::vector<int> &target_values) {
     for (size_t e = 0; e < num_epoch; e++) {
         for (size_t i = 0; i < num_possible_inputs; i++) {
-            std::vector<int> input = all_possible_inputs[i];
+            std::vector<int> &input = all_possible_inputs[i];
             this->output_neuron.update_state(input);
 
             for (size_t j = 0; j < this->num_inputs; j++) {

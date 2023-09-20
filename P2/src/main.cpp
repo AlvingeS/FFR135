@@ -4,6 +4,7 @@
 #include <unordered_set>
 
 // hyperfine ./main --warmup 2 gave 3.213s on laptop
+// hyperfine gave 279ms before optimization
 
 const size_t n_dim = 5;
 const size_t num_samples = 10000;

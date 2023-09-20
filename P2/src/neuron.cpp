@@ -8,7 +8,9 @@ Neuron::Neuron(int state, vector_double_ptr neuron_weights, double bias)
 // Calculates the new state of the neuron based on the input signals
 void Neuron::update_state(std::vector<int> &input_signals) {
     double sum = 0;
-    for (size_t i = 0; i < input_signals.size(); i++) {
+    size_t num_inputs = input_signals.size();
+
+    for (size_t i = 0; i < num_inputs; i++) {
         sum += input_signals[i] * (*neuron_weights_ptr)[i];
     }
 
