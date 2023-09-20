@@ -23,7 +23,7 @@ Perceptron::Perceptron(size_t num_inputs)
 }
 
 // Trains the perceptron for a given number of epochs
-void Perceptron::train(uint64_t &num_possible_inputs, size_t num_epoch, double learning_rate, std::vector<std::vector<int>> &all_possible_inputs, std::vector<int> &target_values) {
+void Perceptron::train(uint64_t num_possible_inputs, size_t num_epoch, double learning_rate, std::vector<std::vector<int>> &all_possible_inputs, std::vector<int> &target_values) {
     for (size_t e = 0; e < num_epoch; e++) {
         for (size_t i = 0; i < num_possible_inputs; i++) {
             std::vector<int> input = all_possible_inputs[i];

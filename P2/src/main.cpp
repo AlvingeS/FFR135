@@ -11,7 +11,7 @@ const size_t num_samples = 10000;
 const size_t num_epoch = 20;
 const double learning_rate = 0.05;
 
-void generate_all_possible_inputs(size_t &n, uint64_t &num_possible_inputs, std::vector<std::vector<int>>& all_possible_inputs) {
+void generate_all_possible_inputs(size_t n, uint64_t num_possible_inputs, std::vector<std::vector<int>>& all_possible_inputs) {
     for (size_t i = 0; i < num_possible_inputs; i++) {
         std::bitset<32> bits(i);
 
@@ -27,18 +27,26 @@ void generate_random_bitset(uint64_t num_possible_functions, std::mt19937 &gen, 
     bitset = std::bitset<32>(dis(gen));
 }
 
- void parse_bitset_to_vector(std::bitset<32> bitset, size_t &n, std::vector<int>& target_values) {
-    for (size_t i = 0; i < n; i++) {
+ void parse_bitset_to_vector(std::bitset<32> &bitset, uint64_t num_possible_inputs, std::vector<int>& target_values) {
+    for (size_t i = 0; i < num_possible_inputs; i++) {
         target_values[i] = bitset[i] == 1 ? 1 : -1;
     }
 }
 
-void print_matrix(std::vector<std::vector<int>> matrix) {
+void print_matrix(std::vector<std::vector<int>> &matrix) {
     for (size_t i = 0; i < matrix.size(); i++) {
         for (size_t j = 0; j < matrix[i].size(); j++) {
             std::cout << matrix[i][j] << " ";
         }
         std::cout << std::endl;
+    }
+
+    std::cout << std::endl;
+}
+
+void print_vector(std::vector<int> &vector) {
+    for (size_t i = 0; i < vector.size(); i++) {
+        std::cout << vector[i] << " ";
     }
 
     std::cout << std::endl;
@@ -54,7 +62,7 @@ int main() {
         uint64_t num_possible_functions = std::pow(2, std::pow(2, n));
         uint64_t num_possible_inputs = std::pow(2, n);
 
-        std::vector<int> target_values(n);
+        std::vector<int> target_values(num_possible_inputs);
         std::vector<std::vector<int>> all_possible_inputs(num_possible_inputs, std::vector<int>(n));
 
         std::unordered_set<std::bitset<32>> tested_functions;
@@ -72,7 +80,7 @@ int main() {
                 tested_functions.insert(bitset);
             }
             
-            parse_bitset_to_vector(bitset, n, target_values);
+            parse_bitset_to_vector(bitset, num_possible_inputs, target_values);
 
             perceptron.train(num_possible_inputs, num_epoch, learning_rate, all_possible_inputs, target_values);
             bool function_separable = perceptron.test_if_separable(all_possible_inputs, target_values);
