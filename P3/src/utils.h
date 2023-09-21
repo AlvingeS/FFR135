@@ -21,3 +21,5 @@ void print_vector(std::vector<T> &vec) {
     }
     std::cout << std::endl;
 }
+
+std::pair<std::vector<std::vector<double>>, std::vector<int>> read_csv(const std::string &filename);
