@@ -4,6 +4,7 @@
 #include <vector>
 #include <string>
 #include <utility>
+#include <cmath>
 
 std::pair<std::vector<std::vector<double>>, std::vector<int>> read_csv(const std::string &filename) {
     std::ifstream file(filename);
@@ -39,4 +40,42 @@ std::pair<std::vector<std::vector<double>>, std::vector<int>> read_csv(const std
 
     file.close();
     return std::make_pair(temp_inputs, temp_targets);
+}
+
+std::vector<std::vector<double>> normalize_data(const std::vector<std::vector<double>> &input_data) {
+    std::vector<double> mean(2, 0.0);
+    std::vector<double> std_dev(2, 0.0);
+    size_t num_samples = input_data.size();
+    
+    // Calculate the mean of each feature
+    for (const auto &row : input_data) {
+        for (size_t i = 0; i < 2; ++i) {
+            mean[i] += row[i];
+        }
+    }
+    for (size_t i = 0; i < 2; ++i) {
+        mean[i] /= num_samples;
+    }
+    
+    // Calculate the standard deviation of each feature
+    for (const auto &row : input_data) {
+        for (size_t i = 0; i < 2; ++i) {
+            std_dev[i] += std::pow(row[i] - mean[i], 2);
+        }
+    }
+    for (size_t i = 0; i < 2; ++i) {
+        std_dev[i] = std::sqrt(std_dev[i] / num_samples);
+    }
+    
+    // Create a new matrix to store the normalized data
+    std::vector<std::vector<double>> normalized_data = input_data;
+    
+    // Normalize the data
+    for (auto &row : normalized_data) {
+        for (size_t i = 0; i < 2; ++i) {
+            row[i] = (row[i] - mean[i]) / std_dev[i];
+        }
+    }
+    
+    return normalized_data;
 }

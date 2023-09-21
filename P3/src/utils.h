@@ -23,3 +23,5 @@ void print_vector(std::vector<T> &vec) {
 }
 
 std::pair<std::vector<std::vector<double>>, std::vector<int>> read_csv(const std::string &filename);
+std::vector<std::vector<double>> normalize_data(const std::vector<std::vector<double>> &input_data);
+

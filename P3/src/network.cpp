@@ -91,31 +91,55 @@ void Network::update_weights_and_biases(double learning_rate, size_t batch_size)
 }
 
 void Network::train(double learning_rate, size_t batch_size, size_t num_epochs) {
+    uint64_t positive = 0;
+    uint64_t negative = 0;
+
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
             this->propagate_forward(this->input_patterns[j]);
+
+            if (this->get_output() > 0 && i == num_epochs - 1) {
+                positive++;
+            } else {
+                negative++;
+            }
+
             this->propagate_backward(j);
 
             if ((j + 1) % batch_size == 0) {
                 this->update_weights_and_biases(learning_rate, batch_size);
+
+                // std::cout << this->hl_weights[0][0] << std::endl;
             }
         }
 
-        this->validate();
+        // this->validate();
     }
+
+    std::cout << "Positive: " << positive << " Negative: " << negative << std::endl;
 }
 
 void Network::validate() {
-    double C = 0.0;
+    this->C = 0.0;
+    this->H = 0.0;
+
+    for (size_t i = 0; i < this->num_patterns; i++) {
+        this->propagate_forward(this->input_patterns[i]);
+        H += std::pow(targets[i] - this->get_output(), 2);
+    }
+
+    H /= 2.0;
 
     for (size_t i = 0; i < this->num_validation_patterns; i++) {
         this->propagate_forward(this->validation_input_patterns[i]);
 
-        int classification = (this->ol_neuron.get_state() > 0) ? 1 : -1;
+        // std::cout << this->get_output() << std::endl;
+
+        int classification = (this->get_output() > 0) ? 1 : -1;
         C += std::abs(classification - this->validation_targets[i]);
     }
 
-    C /= static_cast<double>(this->num_validation_patterns);
+    C /= 2 * static_cast<double>(this->num_validation_patterns);
 
-    std::cout << "C: " << C << std::endl;
+    std::cout << "C: " << C << " H: " << H << std::endl;
 }

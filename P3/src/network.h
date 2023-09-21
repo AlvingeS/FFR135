@@ -17,6 +17,7 @@ typedef std::vector<std::vector<double>> input_matrix;
 class Network {
     public:
         Network(size_t num_hl_neurons, size_t num_patterns, size_t num_validation_patterns);
+        
         double get_output() {
             return this->ol_neuron.get_state();
         }
@@ -74,4 +75,7 @@ class Network {
 
         error_vector hl_errors;
         double ol_error = 0.0;
+
+        double C = 0.0;
+        double H = 0.0;
 };
