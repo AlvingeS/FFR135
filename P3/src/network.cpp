@@ -5,20 +5,19 @@
 #include <iostream>
 
 // Constructor for network
-Network::Network(size_t num_hl_neurons, size_t num_patterns, size_t num_validation_patterns)
+Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data)
     : num_hl_neurons(num_hl_neurons),
-      num_patterns(num_patterns),
-      num_validation_patterns(num_validation_patterns),
-      targets(num_patterns),
-      input_patterns(num_patterns, std::vector<double>(2)),
-      validation_targets(num_validation_patterns),
-      validation_input_patterns(num_validation_patterns, std::vector<double>(2)),
-      hl_weights(num_hl_neurons, weights_vector(2)),
+      training_data(training_data),
+      validation_data(validation_data),
+      hl_weights(num_hl_neurons, double_vector(2)),
       ol_weights(num_hl_neurons),
       hl_biases(num_hl_neurons, 0.0),
       ol_neuron(&this->ol_weights, &this->ol_bias),
       hl_errors(num_hl_neurons, 0.0) {
     
+    this->num_patterns = this->training_data.inputs.size();
+    this->num_validation_patterns = this->validation_data.inputs.size();
+
     double mean = 0.0;
     double std_dev = 1.0 / sqrt(static_cast<double>(this->num_inputs));
     std::default_random_engine generator;
@@ -35,7 +34,7 @@ Network::Network(size_t num_hl_neurons, size_t num_patterns, size_t num_validati
     }
 };
 
-void Network::propagate_forward(const std::vector<double> &input_signals) {
+void Network::propagate_forward(const double_vector &input_signals) {
     for (size_t i = 0; i < this->num_hl_neurons; i++) {
         this->hl_neurons[i].calculate_net_input(input_signals);
         this->hl_neurons[i].update_state();
@@ -45,8 +44,8 @@ void Network::propagate_forward(const std::vector<double> &input_signals) {
     this->ol_neuron.update_state();
 };
 
-std::vector<double> Network::get_hl_states() {
-    std::vector<double> hl_states(this->num_hl_neurons);
+double_vector Network::get_hl_states() {
+    double_vector hl_states(this->num_hl_neurons);
 
     for (size_t i = 0; i < this->num_hl_neurons; i++) {
         hl_states[i] = this->hl_neurons[i].get_state();
@@ -61,7 +60,7 @@ void Network::propagate_backward(int target_index) {
 };
 
 void Network::compute_output_error(int target_index) {
-    this->ol_error += g_prime(this->ol_neuron.get_net_input()) * (this->targets[target_index] - this->ol_neuron.get_state());
+    this->ol_error += g_prime(this->ol_neuron.get_net_input()) * (this->training_data.targets[target_index] - this->ol_neuron.get_state());
 };
 
 void Network::compute_hidden_layer_errors() {
@@ -91,16 +90,13 @@ void Network::update_weights_and_biases(double learning_rate, size_t batch_size)
 }
 
 void Network::train(double learning_rate, size_t batch_size, size_t num_epochs) {
-
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
-            this->propagate_forward(this->input_patterns[j]);
+            this->propagate_forward(this->training_data.inputs[j]);
             this->propagate_backward(j);
 
             if ((j + 1) % batch_size == 0) {
                 this->update_weights_and_biases(learning_rate, batch_size);
-
-                // std::cout << this->hl_weights[0][0] << std::endl;
             }
         }
 
@@ -113,19 +109,17 @@ void Network::validate() {
     this->H = 0.0;
 
     for (size_t i = 0; i < this->num_patterns; i++) {
-        this->propagate_forward(this->input_patterns[i]);
-        H += std::pow(targets[i] - this->get_output(), 2);
+        this->propagate_forward(this->training_data.inputs[i]);
+        H += std::pow(this->training_data.targets[i] - this->get_output(), 2);
     }
 
     H /= 2.0;
 
     for (size_t i = 0; i < this->num_validation_patterns; i++) {
-        this->propagate_forward(this->validation_input_patterns[i]);
-
-        // std::cout << this->get_output() << std::endl;
+        this->propagate_forward(this->validation_data.inputs[i]);
 
         int classification = (this->get_output() > 0) ? 1 : -1;
-        C += std::abs(classification - this->validation_targets[i]);
+        C += std::abs(classification - this->validation_data.targets[i]);
     }
 
     C /= 2 * static_cast<double>(this->num_validation_patterns);

@@ -2,6 +2,15 @@
 
 #include <vector>
 #include <iostream>
+#include <string>
+
+typedef std::vector<double> double_vector;
+typedef std::vector<int> int_vector;
+typedef std::vector<double_vector> double_matrix;
+struct Data {
+    double_matrix inputs;
+    double_vector targets;
+};
 
 template <typename T>
 void print_matrix(std::vector<std::vector<T>> &matrix) {
@@ -22,6 +31,4 @@ void print_vector(std::vector<T> &vec) {
     std::cout << std::endl;
 }
 
-std::pair<std::vector<std::vector<double>>, std::vector<int>> read_csv(const std::string &filename);
-std::vector<std::vector<double>> normalize_data(const std::vector<std::vector<double>> &input_data);
 
