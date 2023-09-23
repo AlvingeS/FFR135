@@ -91,19 +91,10 @@ void Network::update_weights_and_biases(double learning_rate, size_t batch_size)
 }
 
 void Network::train(double learning_rate, size_t batch_size, size_t num_epochs) {
-    uint64_t positive = 0;
-    uint64_t negative = 0;
 
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
             this->propagate_forward(this->input_patterns[j]);
-
-            if (this->get_output() > 0 && i == num_epochs - 1) {
-                positive++;
-            } else {
-                negative++;
-            }
-
             this->propagate_backward(j);
 
             if ((j + 1) % batch_size == 0) {
@@ -113,10 +104,8 @@ void Network::train(double learning_rate, size_t batch_size, size_t num_epochs) 
             }
         }
 
-        // this->validate();
+        this->validate();
     }
-
-    std::cout << "Positive: " << positive << " Negative: " << negative << std::endl;
 }
 
 void Network::validate() {
