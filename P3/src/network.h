@@ -17,7 +17,7 @@ class Network {
             return this->ol_neuron.get_state();
         }
         
-        void train(double learning_rate, size_t batch_size, size_t num_epoch);
+        void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool SGD_true);
 
     private:
         std::vector<double> get_hl_states();
@@ -27,10 +27,11 @@ class Network {
         }
 
         void propagate_forward(const std::vector<double> &input_signals);
-        void propagate_backward(int target_index);
+        void propagate_backward(int target_index, double learning_rate);
         void compute_output_error(int target_index);
         void compute_hidden_layer_errors();
-        void update_weights_and_biases(double learning_rate, size_t batch_size);
+        void update_velocities(double learning_rate, int target_index);
+        void update_weights_and_biases(double momentum, size_t batch_size);
 
         void validate();
 
@@ -47,6 +48,15 @@ class Network {
         double_vector ol_weights;
         double_vector hl_biases;
         double ol_bias = 0.0;
+
+        double_matrix hl_velocity;
+        double_vector ol_velocity;
+        double_vector hl_bias_velocity;
+        double ol_bias_velocity = 0.0;
+        double_matrix old_hl_velocity;
+        double_vector old_ol_velocity;
+        double_vector old_hl_bias_velocity;
+        double old_ol_bias_velocity = 0.0;
         
         Neuron ol_neuron;
         neuron_vector hl_neurons;

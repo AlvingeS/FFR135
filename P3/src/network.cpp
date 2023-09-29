@@ -12,6 +12,12 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
       hl_weights(num_hl_neurons, double_vector(2)),
       ol_weights(num_hl_neurons),
       hl_biases(num_hl_neurons, 0.0),
+      hl_velocity(num_hl_neurons, double_vector(2, 0.0)),
+      ol_velocity(num_hl_neurons, 0.0),
+      hl_bias_velocity(num_hl_neurons, 0.0),
+      old_hl_velocity(num_hl_neurons, double_vector(2, 0.0)),
+      old_ol_velocity(num_hl_neurons, 0.0),
+      old_hl_bias_velocity(num_hl_neurons, 0.0),
       ol_neuron(&this->ol_weights, &this->ol_bias),
       hl_errors(num_hl_neurons, 0.0) {
     
@@ -19,16 +25,18 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->num_validation_patterns = this->validation_data.inputs.size();
 
     double mean = 0.0;
-    double std_dev = 1.0 / sqrt(static_cast<double>(this->num_inputs));
+    double std_dev_hl = 1.0 / sqrt(static_cast<double>(this->num_inputs));
+    double std_dev_ol = 1.0 / sqrt(static_cast<double>(this->num_hl_neurons));
     std::default_random_engine generator;
-    std::normal_distribution<double> distribution(mean, std_dev);
+    std::normal_distribution<double> distribution_hl(mean, std_dev_hl);
+    std::normal_distribution<double> distribution_ol(mean, std_dev_ol);
 
     this->hl_neurons.reserve(this->num_hl_neurons);
     
     for (size_t i = 0; i < this->num_hl_neurons; i++) {
-        this->hl_weights[i][0] = distribution(generator);
-        this->hl_weights[i][1] = distribution(generator);
-        this->ol_weights[i] = distribution(generator);
+        this->hl_weights[i][0] = distribution_hl(generator);
+        this->hl_weights[i][1] = distribution_hl(generator);
+        this->ol_weights[i] = distribution_ol(generator);
 
         this->hl_neurons.emplace_back(&this->hl_weights[i], &this->hl_biases[i]);
     }
@@ -54,9 +62,10 @@ double_vector Network::get_hl_states() {
     return hl_states;
 };
 
-void Network::propagate_backward(int target_index) {
+void Network::propagate_backward(int target_index, double learning_rate) {
     this->compute_output_error(target_index);
     this->compute_hidden_layer_errors();
+    this->update_velocities(learning_rate, target_index);
 };
 
 void Network::compute_output_error(int target_index) {
@@ -69,39 +78,82 @@ void Network::compute_hidden_layer_errors() {
     }
 }
 
-void Network::update_weights_and_biases(double learning_rate, size_t batch_size) {
+void Network::update_velocities(double learning_rate, int target_index) {
+    this->old_hl_velocity = this->hl_velocity;
+    this->old_ol_velocity = this->ol_velocity;
+    this->old_hl_bias_velocity = this->hl_bias_velocity;
+    this->old_ol_bias_velocity = this->ol_bias_velocity;
+
+    for (size_t m = 0; m < this->num_hl_neurons; m++) {
+        for (size_t n = 0; n < this->num_inputs; n++) {
+            this->hl_velocity[m][n] = learning_rate * this->hl_errors[m] * this->training_data.inputs[target_index][n];
+        }
+
+        this->ol_velocity[m] = learning_rate * this->ol_error * this->hl_neurons[m].get_state();
+        
+        this->hl_bias_velocity[m] = learning_rate * this->hl_errors[m];
+    }
+
+    this->ol_bias_velocity = learning_rate * this->ol_error;
+}
+
+void Network::update_weights_and_biases(double momentum, size_t batch_size) {
     this->ol_error /= static_cast<double>(batch_size);
 
     for (size_t m = 0; m < this->num_hl_neurons; m++) {
         this->hl_errors[m] /= static_cast<double>(batch_size);
 
         for (size_t n = 0; n < this->num_inputs; n++) {
-            this->hl_weights[m][n] = this->hl_weights[m][n] + learning_rate * this->hl_errors[m] * this->hl_neurons[m].get_state();
+            this->hl_weights[m][n] += this->hl_velocity[m][n] + momentum * this->old_hl_velocity[m][n];
         }
 
-        this->ol_weights[m] = this->ol_weights[m] + learning_rate * this->ol_error * this->hl_neurons[m].get_state();
+        this->ol_weights[m] += this->ol_velocity[m] + momentum * this->old_ol_velocity[m];
 
-        this->hl_biases[m] = this->hl_biases[m] - learning_rate * this->hl_errors[m];
-        this->ol_bias = this->ol_bias - learning_rate * this->ol_error;
+        this->hl_biases[m] -= this->hl_bias_velocity[m] + momentum * this->old_hl_bias_velocity[m];
+        this->ol_bias -= this->ol_bias_velocity + momentum * this->old_ol_bias_velocity;
     }
 
     this->ol_error = 0.0;
     this->hl_errors.assign(this->num_hl_neurons, 0.0);
 }
 
-void Network::train(double learning_rate, size_t batch_size, size_t num_epochs) {
+void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true) {
+    double C_min = 1.0;
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::uniform_int_distribution<size_t> distribution(0, this->num_patterns - 1);
+
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
-            this->propagate_forward(this->training_data.inputs[j]);
-            this->propagate_backward(j);
 
-            if ((j + 1) % batch_size == 0) {
-                this->update_weights_and_biases(learning_rate, batch_size);
+            if (SGD_true) {
+                j = distribution(g);
+            }
+
+            this->propagate_forward(this->training_data.inputs[j]);
+            this->propagate_backward(j, learning_rate);
+
+            if (SGD_true) {
+                this->update_weights_and_biases(momentum, batch_size);
+            } else if ((j + 1) % batch_size == 0) {
+                this->update_weights_and_biases(momentum, batch_size);
             }
         }
 
         this->validate();
+
+        if (this->C < C_min) {
+            C_min = this->C;
+        }
+
+        if (this->C < 0.12) {
+            std::cout << "C < 0.12!!!!!!!!!!!!!!!!!!" << std::endl;
+            break;
+        }
     }
+
+    std::cout << "C_min: " << C_min << std::endl;
 }
 
 void Network::validate() {
@@ -124,5 +176,5 @@ void Network::validate() {
 
     C /= 2 * static_cast<double>(this->num_validation_patterns);
 
-    std::cout << "C: " << C << " H: " << H << std::endl;
+    // std::cout << "C: " << C << " H: " << H << std::endl;
 }
