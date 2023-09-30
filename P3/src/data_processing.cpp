@@ -77,31 +77,26 @@ void normalize_input_data(Data &training_data, Data &data_to_be_normalized) {
 }
 
 void shuffle_data(Data& data) {
-    // Get the size of the data
-    size_t dataSize = data.inputs.size();
+    size_t data_size = data.inputs.size();
     
-    // Create a random engine
     std::random_device rd;
     std::default_random_engine engine(rd());
     
-    // Create a vector of indices and shuffle it
-    std::vector<size_t> indices(dataSize);
-    for (size_t i = 0; i < dataSize; ++i) {
+    std::vector<size_t> indices(data_size);
+    for (size_t i = 0; i < data_size; ++i) {
         indices[i] = i;
     }
+    
     std::shuffle(indices.begin(), indices.end(), engine);
     
-    // Create new containers to hold the shuffled data
-    double_matrix newInputs(dataSize);
-    double_vector newTargets(dataSize);
+    double_matrix new_inputs(data_size);
+    double_vector new_targets(data_size);
     
-    // Populate the new containers using the shuffled indices
-    for (size_t i = 0; i < dataSize; ++i) {
-        newInputs[i] = data.inputs[indices[i]];
-        newTargets[i] = data.targets[indices[i]];
+    for (size_t i = 0; i < data_size; ++i) {
+        new_inputs[i] = data.inputs[indices[i]];
+        new_targets[i] = data.targets[indices[i]];
     }
     
-    // Swap the old and new containers
-    data.inputs.swap(newInputs);
-    data.targets.swap(newTargets);
+    data.inputs.swap(new_inputs);
+    data.targets.swap(new_targets);
 }

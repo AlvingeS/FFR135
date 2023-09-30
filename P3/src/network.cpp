@@ -26,8 +26,6 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
 
     this->old_velocities.hl = double_matrix(this->num_hl_neurons, double_vector(this->num_inputs, 0.0));
     this->old_velocities.ol = double_vector(this->num_hl_neurons, 0.0);
-    this->old_velocities.hl_bias = double_vector(this->num_hl_neurons, 0.0);
-    this->old_velocities.ol_bias = 0.0;
 
     double mean = 0.0;
     double std_dev_hl = 1.0 / sqrt(static_cast<double>(this->num_inputs));
@@ -53,7 +51,7 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->errors.ol = 0.0;
 };
 
-void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true) {
+void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true, bool measure_H, bool verbose) {
     double C_min = 1.0;
 
     std::random_device rd;
@@ -77,7 +75,7 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
             }
         }
 
-        this->validate(i);
+        this->validate(i, measure_H, verbose);
 
         if (this->C < C_min) {
             C_min = this->C;
@@ -114,26 +112,21 @@ double_vector Network::get_hl_states() {
 };
 
 void Network::propagate_backward(int target_index, double learning_rate) {
-    this->compute_output_error(target_index);
-    this->compute_hidden_layer_errors();
+    this->compute_errors(target_index);
     this->update_velocities(learning_rate, target_index);
 };
 
-void Network::compute_output_error(int target_index) {
+void Network::compute_errors(int target_index) {
     this->errors.ol += g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0].get_state());
-};
 
-void Network::compute_hidden_layer_errors() {
     for (size_t j = 0; j < this->num_hl_neurons; j++) {
         errors.hl[j] += this->errors.ol * this->weights.ol[j] * g_prime(this->neurons.hl[j].get_net_input());
     }
-}
+};
 
 void Network::update_velocities(double learning_rate, int target_index) {
     this->old_velocities.hl = this->velocities.hl;
     this->old_velocities.ol = this->velocities.ol;
-    this->old_velocities.hl_bias = this->velocities.hl_bias;
-    this->old_velocities.ol_bias = this->velocities.ol_bias;
 
     for (size_t m = 0; m < this->num_hl_neurons; m++) {
         for (size_t n = 0; n < this->num_inputs; n++) {
@@ -160,33 +153,58 @@ void Network::update_weights_and_biases(double momentum, size_t batch_size) {
 
         this->weights.ol[m] += this->velocities.ol[m] + momentum * this->old_velocities.ol[m];
 
-        this->biases.hl[m] -= this->velocities.hl_bias[m] + momentum * this->old_velocities.hl_bias[m];
-        this->biases.ol -= this->velocities.ol_bias + momentum * this->old_velocities.ol_bias;
+        this->biases.hl[m] -= this->velocities.hl_bias[m];
+        this->biases.ol -= this->velocities.ol_bias;
     }
 
     this->errors.ol = 0.0;
     this->errors.hl.assign(this->num_hl_neurons, 0.0);
 }
 
-void Network::validate(size_t epoch) {
+void Network::validate(size_t epoch, bool measure_H, bool verbose) {
     this->C = 0.0;
     this->H = 0.0;
+    int consecutive_minus_ones = 0;
 
-    for (size_t i = 0; i < this->num_patterns; i++) {
-        this->propagate_forward(this->training_data.inputs[i]);
-        H += std::pow(this->training_data.targets[i] - this->get_output(), 2);
+    if (measure_H) {
+        for (size_t i = 0; i < this->num_patterns; i++) {
+            this->propagate_forward(this->training_data.inputs[i]);
+            H += std::pow(this->training_data.targets[i] - this->get_output(), 2);
+        }
+
+        H /= 2.0;
     }
-
-    H /= 2.0;
-
+    
     for (size_t i = 0; i < this->num_validation_patterns; i++) {
         this->propagate_forward(this->validation_data.inputs[i]);
 
         int classification = (this->get_output() > 0) ? 1 : -1;
+
+        if (classification == -1) {
+            consecutive_minus_ones++;
+        } else {
+            consecutive_minus_ones = 0;
+        }
+
         C += std::abs(classification - this->validation_data.targets[i]);
+
+        // Stop the validation if the network classifies all patterns as -1
+        if (consecutive_minus_ones == 100) {
+            break;
+        }
     }
 
-    C /= 2 * static_cast<double>(this->num_validation_patterns);
+    if (consecutive_minus_ones == 100) {
+        C = 1.0;
+    } else {
+        C /= 2 * static_cast<double>(this->num_validation_patterns);
+    }
 
-    // std::cout << "Epoch: " << epoch << "  C: " << C << "  H: " << H << std::endl;
+    if (verbose) {
+        if (measure_H) {
+            std::cout << "Epoch: " << epoch << "  C: " << C << "  H: " << H << std::endl;
+        } else {
+            std::cout << "Epoch: " << epoch << "  C: " << C << std::endl;
+        }
+    }
 }
