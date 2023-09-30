@@ -47,19 +47,18 @@ class Network {
         void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool SGD_true);
 
     private:
-        std::vector<double> get_hl_states();
         
         double g_prime(double x) {
             return 1 - std::pow(std::tanh(x), 2);
         }
 
         void propagate_forward(const std::vector<double> &input_signals);
+        std::vector<double> get_hl_states();
         void propagate_backward(int target_index, double learning_rate);
         void compute_output_error(int target_index);
         void compute_hidden_layer_errors();
         void update_velocities(double learning_rate, int target_index);
         void update_weights_and_biases(double momentum, size_t batch_size);
-
         void validate(size_t epoch);
 
         size_t num_inputs = 2;

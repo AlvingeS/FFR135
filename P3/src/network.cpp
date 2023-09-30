@@ -53,6 +53,46 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->errors.ol = 0.0;
 };
 
+void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true) {
+    double C_min = 1.0;
+
+    std::random_device rd;
+    std::mt19937 g(rd());
+    std::uniform_int_distribution<size_t> distribution(0, this->num_patterns - 1);
+
+    for (size_t i = 0; i < num_epochs; i++) {
+        for (size_t j = 0; j < this-> num_patterns; j++) {
+
+            if (SGD_true) {
+                j = distribution(g);
+            }
+
+            this->propagate_forward(this->training_data.inputs[j]);
+            this->propagate_backward(j, learning_rate);
+
+            if (SGD_true) {
+                this->update_weights_and_biases(momentum, 1);
+            } else if ((j + 1) % batch_size == 0) {
+                this->update_weights_and_biases(momentum, batch_size);
+            }
+        }
+
+        this->validate(i);
+
+        if (this->C < C_min) {
+            C_min = this->C;
+        }
+
+        if (this->C < 0.12) {
+            std::cout << std::endl;
+            std::cout << " --------------* C < 0.12 *-------------- " << std::endl;
+            std::cout << std::endl;
+        }
+    }
+
+    std::cout << "C_min: " << C_min << std::endl;
+}
+
 void Network::propagate_forward(const double_vector &input_signals) {
     for (size_t i = 0; i < this->num_hl_neurons; i++) {
         this->neurons.hl[i].calculate_net_input(input_signals);
@@ -80,7 +120,7 @@ void Network::propagate_backward(int target_index, double learning_rate) {
 };
 
 void Network::compute_output_error(int target_index) {
-    this->errors.ol += g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0]get_state());
+    this->errors.ol += g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0].get_state());
 };
 
 void Network::compute_hidden_layer_errors() {
@@ -126,46 +166,6 @@ void Network::update_weights_and_biases(double momentum, size_t batch_size) {
 
     this->errors.ol = 0.0;
     this->errors.hl.assign(this->num_hl_neurons, 0.0);
-}
-
-void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true) {
-    double C_min = 1.0;
-
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::uniform_int_distribution<size_t> distribution(0, this->num_patterns - 1);
-
-    for (size_t i = 0; i < num_epochs; i++) {
-        for (size_t j = 0; j < this-> num_patterns; j++) {
-
-            if (SGD_true) {
-                j = distribution(g);
-            }
-
-            this->propagate_forward(this->training_data.inputs[j]);
-            this->propagate_backward(j, learning_rate);
-
-            if (SGD_true) {
-                this->update_weights_and_biases(momentum, 1);
-            } else if ((j + 1) % batch_size == 0) {
-                this->update_weights_and_biases(momentum, batch_size);
-            }
-        }
-
-        this->validate(i);
-
-        if (this->C < C_min) {
-            C_min = this->C;
-        }
-
-        if (this->C < 0.12) {
-            std::cout << std::endl;
-            std::cout << " --------------* C < 0.12 *-------------- " << std::endl;
-            std::cout << std::endl;
-        }
-    }
-
-    std::cout << "C_min: " << C_min << std::endl;
 }
 
 void Network::validate(size_t epoch) {
