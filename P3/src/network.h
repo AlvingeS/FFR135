@@ -9,12 +9,39 @@
 
 typedef std::vector<Neuron> neuron_vector;
 
+struct weights_struct {
+    double_matrix hl;
+    double_vector ol;
+};
+
+struct biases_struct {
+    double_vector hl;
+    double ol;
+};
+
+struct velocities_struct {
+    double_matrix hl;
+    double_vector ol;
+    double_vector hl_bias;
+    double ol_bias;
+};
+
+struct neurons_struct {
+    neuron_vector hl;
+    neuron_vector ol;
+};
+
+struct errors_struct {
+    double_vector hl;
+    double ol;
+};
+
 class Network {
     public:
         Network(size_t num_hl_neurons, Data training_data, Data validation_data);
         
         double get_output() {
-            return this->ol_neuron.get_state();
+            return this->neurons.ol[0].get_state();
         }
         
         void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool SGD_true);
@@ -44,25 +71,15 @@ class Network {
         Data training_data;
         Data validation_data;
         
-        double_matrix hl_weights;
-        double_vector ol_weights;
-        double_vector hl_biases;
-        double ol_bias = 0.0;
+        weights_struct weights;
+        biases_struct biases;
 
-        double_matrix hl_velocity;
-        double_vector ol_velocity;
-        double_vector hl_bias_velocity;
-        double ol_bias_velocity = 0.0;
-        double_matrix old_hl_velocity;
-        double_vector old_ol_velocity;
-        double_vector old_hl_bias_velocity;
-        double old_ol_bias_velocity = 0.0;
+        velocities_struct velocities;
+        velocities_struct old_velocities;
         
-        Neuron ol_neuron;
-        neuron_vector hl_neurons;
+        neurons_struct neurons;
 
-        double_vector hl_errors;
-        double ol_error = 0.0;
+        errors_struct errors;
 
         double C = 0.0;
         double H = 0.0;

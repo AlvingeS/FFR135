@@ -17,10 +17,10 @@ int main() {
 
     Network network(16, training_data, validation_data);
 
-    int_vector nr_neurons = {32};
-    double_vector learning_rates = {0.005};
-    double_vector momentums = {0.9};
-    int_vector batch_sizes = {8};
+    int_vector nr_neurons = {16, 32};
+    double_vector learning_rates = {0.01, 0.0075, 0.005, 0.0025};
+    double_vector momentums = {0.0, 0.25, 0.5};
+    int_vector batch_sizes = {1};
 
     for (const auto &nr_neuron : nr_neurons) {
         for (const auto &learning_rate : learning_rates) {
@@ -28,7 +28,7 @@ int main() {
                 for (const auto &batch_size : batch_sizes) {
                     // prints all parameters in one line
                     Network network(nr_neuron, training_data, validation_data);
-                    network.train(learning_rate, momentum, batch_size, 250, false);
+                    network.train(learning_rate, momentum, batch_size, 350, true);
                     std::cout << nr_neuron << " " << learning_rate << " " << momentum << " " << batch_size << std::endl;
                 }
             }
