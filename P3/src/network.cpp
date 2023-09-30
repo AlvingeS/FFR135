@@ -3,6 +3,7 @@
 #include <random>
 #include <cmath>
 #include <iostream>
+#include <fstream>
 
 // Constructor for network
 Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data)
@@ -51,7 +52,7 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->errors.ol = 0.0;
 };
 
-void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true, bool measure_H, bool verbose) {
+void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true, bool measure_H, bool verbose) {
     double C_min = 1.0;
 
     std::random_device rd;
@@ -59,6 +60,7 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
     std::uniform_int_distribution<size_t> distribution(0, this->num_patterns - 1);
 
     for (size_t i = 0; i < num_epochs; i++) {
+        learning_rate = std::max(learning_rate * decay_rate, min_learning_rate);
         for (size_t j = 0; j < this-> num_patterns; j++) {
 
             if (SGD_true) {
@@ -85,6 +87,7 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
             std::cout << std::endl;
             std::cout << " --------------* C < 0.12 *-------------- " << std::endl;
             std::cout << std::endl;
+            break;
         }
     }
 
@@ -189,12 +192,12 @@ void Network::validate(size_t epoch, bool measure_H, bool verbose) {
         C += std::abs(classification - this->validation_data.targets[i]);
 
         // Stop the validation if the network classifies all patterns as -1
-        if (consecutive_minus_ones == 100) {
+        if (consecutive_minus_ones == 1000) {
             break;
         }
     }
 
-    if (consecutive_minus_ones == 100) {
+    if (consecutive_minus_ones == 1000) {
         C = 1.0;
     } else {
         C /= 2 * static_cast<double>(this->num_validation_patterns);
@@ -207,4 +210,21 @@ void Network::validate(size_t epoch, bool measure_H, bool verbose) {
             std::cout << "Epoch: " << epoch << "  C: " << C << std::endl;
         }
     }
+}
+
+void Network::export_validation_results() {
+    std::ofstream file("validation_results.csv");
+    file << "X,Y,Label" << std::endl;
+
+    for (size_t i = 0; i < this->num_validation_patterns; i++) {
+        this->propagate_forward(this->validation_data.inputs[i]);
+
+        int classification = (this->get_output() > 0) ? 1 : -1;
+
+        file << this->validation_data.inputs[i][0] << "," 
+             << this->validation_data.inputs[i][1] << ","
+             << classification << std::endl;
+    }
+
+    file.close();
 }

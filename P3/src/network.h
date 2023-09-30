@@ -44,7 +44,25 @@ class Network {
             return this->neurons.ol[0].get_state();
         }
         
-        void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool SGD_true, bool measure_H, bool verbose);
+        void train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epoch, bool SGD_true, bool measure_H, bool verbose);
+
+        std::vector<std::vector<double>> get_weights_hl() {
+            return this->weights.hl;
+        }
+
+        std::vector<double> get_weights_ol() {
+            return this->weights.ol;
+        }
+
+        std::vector<double> get_biases_hl() {
+            return this->biases.hl;
+        }
+
+        double get_biases_ol() {
+            return this->biases.ol;
+        }
+
+        void export_validation_results();
 
     private:
         
