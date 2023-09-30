@@ -134,29 +134,28 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
             this->propagate_forward(this->training_data.inputs[j]);
             this->propagate_backward(j, learning_rate);
 
-            if (SGD_true) {
-                this->update_weights_and_biases(momentum, batch_size);
-            } else if ((j + 1) % batch_size == 0) {
+            if ((j + 1) % batch_size == 0) {
                 this->update_weights_and_biases(momentum, batch_size);
             }
         }
 
-        this->validate();
+        this->validate(i);
 
         if (this->C < C_min) {
             C_min = this->C;
         }
 
         if (this->C < 0.12) {
-            std::cout << "C < 0.12!!!!!!!!!!!!!!!!!!" << std::endl;
-            break;
+            std::cout << std::endl;
+            std::cout << " --------------* C < 0.12 *-------------- " << std::endl;
+            std::cout << std::endl;
         }
     }
 
     std::cout << "C_min: " << C_min << std::endl;
 }
 
-void Network::validate() {
+void Network::validate(size_t epoch) {
     this->C = 0.0;
     this->H = 0.0;
 
@@ -176,5 +175,5 @@ void Network::validate() {
 
     C /= 2 * static_cast<double>(this->num_validation_patterns);
 
-    // std::cout << "C: " << C << " H: " << H << std::endl;
+    // std::cout << "Epoch: " << epoch << "  C: " << C << "  H: " << H << std::endl;
 }

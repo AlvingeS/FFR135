@@ -33,7 +33,7 @@ class Network {
         void update_velocities(double learning_rate, int target_index);
         void update_weights_and_biases(double momentum, size_t batch_size);
 
-        void validate();
+        void validate(size_t epoch);
 
         size_t num_inputs = 2;
         size_t num_hl_neurons;
