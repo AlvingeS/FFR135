@@ -16,11 +16,12 @@ int main() {
 
     shuffle_data(training_data);
 
-    int_vector nr_neurons = {128};
+    int_vector nr_neurons = {16, 32, 64};
     double_vector learning_rates = {0.0005, 0.001, 0.005, 0.01};
     double_vector momentums = {0.0, 0.3, 0.6};
-    int_vector batch_sizes = {2, 4};
+    int_vector batch_sizes = {2, 4, 8, 16};
     bool grid_search = false;
+    bool create_movie = false;
 
     if (grid_search) {
         for (const auto &nr_neuron : nr_neurons) {
@@ -28,39 +29,36 @@ int main() {
                 for (const auto &momentum : momentums) {
                     for (const auto &batch_size : batch_sizes) {
                         Network network(nr_neuron, training_data, validation_data);
-                        network.train(learning_rate, 0.001, 0.999, momentum, batch_size, 150, false, false, false);
+                        network.train(learning_rate, 0.0001, 0.999, momentum, batch_size, 350, false, false, false);
                         std::cout << nr_neuron << " " << learning_rate << " " << momentum << " " << batch_size << std::endl;
                     }
                 }
             }
         }
     } else {
-        Network network(16, training_data, validation_data);
-        network.train(0.01, 0.0005, 0.9999, 0.3, 2, 500, false, true, true);
-
-        write_weights_and_biases_to_csv(network.get_weights_hl(), network.get_weights_ol(), network.get_biases_hl(), network.get_biases_ol());
-        network.export_validation_results();
-        std::system("python plot.py");
+        Network network(32, training_data, validation_data);
+        network.train(0.01, 0.1, 1, 0.4, 2, 25000, true, true, create_movie);        
+        if (create_movie) {
+            std::system("python create_movie.py");
+        } else {
+            network.export_validation_results("final");
+            std::system("python plot.py");
+        }
     }
 
     return 0;
 };
 
 
-// 16 0.01 0.3 2
-// 16 0.01 0.3 8
-// 16 0.01 0.6 8
-// 32 0.005 0.6 8
-// 32 0.001 0 8
-// 32 0.001 0.6 8
-
-
-// C_min: 0.1352
-// 16 0.01 0.6 2
-// C_min: 0.1374
-// 32 0.005 0 2
-// C_min: 0.1374
-// 32 0.01 0 2
-// C_min: 0.1366
-// 32 0.01 0.6 2
-//         network.train(0.00025, 0.00005, 0.9999, 0.9, 2, 50, false, true, true);
+/*
+C_min: 0.136
+32 0.0005 0.3 2
+C_min: 0.1364
+32 0.0005 0.6 2
+C_min: 0.1358
+32 0.001 0 2
+C_min: 0.1364
+32 0.001 0.3 2
+32 0.001 0 16
+C_min: 0.1364
+*/

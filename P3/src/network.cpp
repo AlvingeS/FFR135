@@ -52,32 +52,27 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->errors.ol = 0.0;
 };
 
-void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool SGD_true, bool measure_H, bool verbose) {
+void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose, bool create_files) {
     double C_min = 1.0;
-
-    std::random_device rd;
-    std::mt19937 g(rd());
-    std::uniform_int_distribution<size_t> distribution(0, this->num_patterns - 1);
 
     for (size_t i = 0; i < num_epochs; i++) {
         learning_rate = std::max(learning_rate * decay_rate, min_learning_rate);
         for (size_t j = 0; j < this-> num_patterns; j++) {
 
-            if (SGD_true) {
-                j = distribution(g);
-            }
-
             this->propagate_forward(this->training_data.inputs[j]);
-            this->propagate_backward(j, learning_rate);
+            this->compute_errors(j);
 
-            if (SGD_true) {
-                this->update_weights_and_biases(momentum, 1);
-            } else if ((j + 1) % batch_size == 0) {
-                this->update_weights_and_biases(momentum, batch_size);
+            if ((j + 1) % batch_size == 0) {
+                this->update_velocities(learning_rate, j, batch_size);
+                this->update_weights_and_biases(momentum);
             }
         }
 
         this->validate(i, measure_H, verbose);
+        
+        if (create_files) {
+            this->export_validation_results(std::to_string(i));
+        }
 
         if (this->C < C_min) {
             C_min = this->C;
@@ -114,11 +109,6 @@ double_vector Network::get_hl_states() {
     return hl_states;
 };
 
-void Network::propagate_backward(int target_index, double learning_rate) {
-    this->compute_errors(target_index);
-    this->update_velocities(learning_rate, target_index);
-};
-
 void Network::compute_errors(int target_index) {
     this->errors.ol += g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0].get_state());
 
@@ -127,11 +117,15 @@ void Network::compute_errors(int target_index) {
     }
 };
 
-void Network::update_velocities(double learning_rate, int target_index) {
+void Network::update_velocities(double learning_rate, int target_index, size_t batch_size) {
+    this->errors.ol /= static_cast<double>(batch_size); 
+
     this->old_velocities.hl = this->velocities.hl;
     this->old_velocities.ol = this->velocities.ol;
 
     for (size_t m = 0; m < this->num_hl_neurons; m++) {
+        this->errors.hl[m] /= static_cast<double>(batch_size);
+
         for (size_t n = 0; n < this->num_inputs; n++) {
             this->velocities.hl[m][n] = learning_rate * this->errors.hl[m] * this->training_data.inputs[target_index][n];
         }
@@ -141,14 +135,14 @@ void Network::update_velocities(double learning_rate, int target_index) {
         this->velocities.hl_bias[m] = learning_rate * this->errors.hl[m];
     }
 
-    this->biases.ol = learning_rate * this->errors.ol;
+    this->velocities.ol_bias = learning_rate * this->errors.ol;
+
+    this->errors.ol = 0.0;
+    this->errors.hl.assign(this->num_hl_neurons, 0.0);
 }
 
-void Network::update_weights_and_biases(double momentum, size_t batch_size) {
-    this->errors.ol /= static_cast<double>(batch_size);
-
+void Network::update_weights_and_biases(double momentum) {
     for (size_t m = 0; m < this->num_hl_neurons; m++) {
-        this->errors.hl[m] /= static_cast<double>(batch_size);
 
         for (size_t n = 0; n < this->num_inputs; n++) {
             this->weights.hl[m][n] += this->velocities.hl[m][n] + momentum * this->old_velocities.hl[m][n];
@@ -159,9 +153,6 @@ void Network::update_weights_and_biases(double momentum, size_t batch_size) {
         this->biases.hl[m] -= this->velocities.hl_bias[m];
         this->biases.ol -= this->velocities.ol_bias;
     }
-
-    this->errors.ol = 0.0;
-    this->errors.hl.assign(this->num_hl_neurons, 0.0);
 }
 
 void Network::validate(size_t epoch, bool measure_H, bool verbose) {
@@ -212,8 +203,8 @@ void Network::validate(size_t epoch, bool measure_H, bool verbose) {
     }
 }
 
-void Network::export_validation_results() {
-    std::ofstream file("validation_results.csv");
+void Network::export_validation_results(std::string filename) {
+    std::ofstream file("boundaries/" + filename + ".csv");
     file << "X,Y,Label" << std::endl;
 
     for (size_t i = 0; i < this->num_validation_patterns; i++) {
