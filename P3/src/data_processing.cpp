@@ -108,10 +108,10 @@ void write_weights_and_biases_to_csv(
     const std::vector<double> &w2,
     double t2
 ) {
-    std::ofstream w1_file("output_parameters/w1.csv");
-    std::ofstream t1_file("output_parameters/t1.csv");
-    std::ofstream w2_file("output_parameters/w2.csv");
-    std::ofstream t2_file("output_parameters/t2.csv");
+    std::ofstream w1_file("w1.csv");
+    std::ofstream t1_file("t1.csv");
+    std::ofstream w2_file("w2.csv");
+    std::ofstream t2_file("t2.csv");
 
     if (!w1_file.is_open() || !t1_file.is_open() || !w2_file.is_open() || !t2_file.is_open()) {
         std::cout << "Could not open one or more files for writing.\n";
