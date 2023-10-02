@@ -56,7 +56,7 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
 };
 
 void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
-    double C_min = 1.0;
+    double H_min = 3000;
 
     for (size_t i = 0; i < num_epochs; i++) {
         learning_rate = std::max(learning_rate * decay_rate, min_learning_rate);
@@ -73,19 +73,19 @@ void Network::train(double learning_rate, double min_learning_rate, double decay
 
         this->validate(i, measure_H, verbose);
 
-        if (this->C < C_min) {
-            C_min = this->C;
+        if (this->H < H_min) {
+            H_min = this->H;
         }
 
-        if (this->C < 0.12) {
+        if (this->H < 2100) {
             std::cout << std::endl;
-            std::cout << " --------------* C < 0.12 *-------------- " << std::endl;
+            std::cout << " --------------* H < 2100 *-------------- " << std::endl;
             std::cout << std::endl;
             break;
         }
     }
 
-    std::cout << "C_min: " << C_min << std::endl;
+    std::cout << "H_min: " << H_min << std::endl;
 
 }
 

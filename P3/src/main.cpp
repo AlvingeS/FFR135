@@ -17,9 +17,9 @@ int main() {
     shuffle_data(training_data);
 
     int_vector nr_neurons = {8, 16, 32, 64};
-    double_vector learning_rates = {0.0005, 0.001, 0.005, 0.01};
-    double_vector momentums = {0.0, 0.5, 0.9};
-    int_vector batch_sizes = {2, 4, 8, 16};
+    double_vector learning_rates = {0.005, 0.01};
+    double_vector momentums = {0.7};
+    int_vector batch_sizes = {2};
     bool grid_search = false;
 
     if (grid_search) {
@@ -28,15 +28,15 @@ int main() {
                 for (const auto &momentum : momentums) {
                     for (const auto &batch_size : batch_sizes) {
                         Network network(nr_neuron, training_data, validation_data);
-                        network.train(learning_rate, 0.0001, 0.999, momentum, batch_size, 350, false, false);
+                        network.train(learning_rate, 0.0001, 1, momentum, batch_size, 350, true, false);
                         std::cout << nr_neuron << " " << learning_rate << " " << momentum << " " << batch_size << std::endl;
                     }
                 }
             }
         }
     } else {
-        Network network(16, training_data, validation_data);
-        network.train(0.005, 0.0001, 1, 0.9, 4, 500, true, true);
+        Network network(32, training_data, validation_data);
+        network.train(0.005, 0.0001, 1, 0.7, 2, 10000, true, true);
         write_weights_and_biases_to_csv(network.get_weights_hl(), network.get_biases_hl(), network.get_weights_ol(), network.get_biases_ol());      
         network.export_validation_results();
         std::system("python plot.py");
@@ -49,5 +49,14 @@ int main() {
 /*
 
 16 0.005, no decay, 0.9, 4 and 500 epochs gave me triangle shape
+
+
+H_min: 2134.4
+16 0.005 0.7 2
+
+H_min: 2099.97
+32 0.005 0.7 2
+
+
 
 */
