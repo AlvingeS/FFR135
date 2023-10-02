@@ -52,7 +52,7 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
     this->errors.ol = 0.0;
 };
 
-void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose, bool create_files) {
+void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
     double C_min = 1.0;
 
     for (size_t i = 0; i < num_epochs; i++) {
@@ -69,10 +69,6 @@ void Network::train(double learning_rate, double min_learning_rate, double decay
         }
 
         this->validate(i, measure_H, verbose);
-        
-        if (create_files) {
-            this->export_validation_results(std::to_string(i));
-        }
 
         if (this->C < C_min) {
             C_min = this->C;
@@ -87,6 +83,7 @@ void Network::train(double learning_rate, double min_learning_rate, double decay
     }
 
     std::cout << "C_min: " << C_min << std::endl;
+
 }
 
 void Network::propagate_forward(const double_vector &input_signals) {
@@ -203,8 +200,8 @@ void Network::validate(size_t epoch, bool measure_H, bool verbose) {
     }
 }
 
-void Network::export_validation_results(std::string filename) {
-    std::ofstream file("boundaries/" + filename + ".csv");
+void Network::export_validation_results() {
+    std::ofstream file("output_parameters/validation_results.csv");
     file << "X,Y,Label" << std::endl;
 
     for (size_t i = 0; i < this->num_validation_patterns; i++) {

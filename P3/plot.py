@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import pandas as pd
 
 # Read the CSV file into a pandas DataFrame
-df = pd.read_csv('./boundaries/final.csv')
+df = pd.read_csv('./output_parameters/validation_results.csv')
 
 # Create the scatter plot
 plt.scatter(df[df['Label'] == -1]['X'], df[df['Label'] == -1]['Y'], color='red')

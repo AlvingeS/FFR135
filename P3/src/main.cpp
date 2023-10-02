@@ -8,8 +8,8 @@
 // main function for P2
 int main() {
 
-    Data training_data = read_csv("training_set.csv");
-    Data validation_data = read_csv("validation_set.csv");
+    Data training_data = read_csv("data/training_set.csv");
+    Data validation_data = read_csv("data/validation_set.csv");
 
     normalize_input_data(training_data, training_data);
     normalize_input_data(training_data, validation_data);
@@ -21,7 +21,6 @@ int main() {
     double_vector momentums = {0.0, 0.3, 0.6};
     int_vector batch_sizes = {2, 4, 8, 16};
     bool grid_search = false;
-    bool create_movie = false;
 
     if (grid_search) {
         for (const auto &nr_neuron : nr_neurons) {
@@ -29,21 +28,18 @@ int main() {
                 for (const auto &momentum : momentums) {
                     for (const auto &batch_size : batch_sizes) {
                         Network network(nr_neuron, training_data, validation_data);
-                        network.train(learning_rate, 0.0001, 0.999, momentum, batch_size, 350, false, false, false);
+                        network.train(learning_rate, 0.0001, 0.999, momentum, batch_size, 350, false, false);
                         std::cout << nr_neuron << " " << learning_rate << " " << momentum << " " << batch_size << std::endl;
                     }
                 }
             }
         }
     } else {
-        Network network(32, training_data, validation_data);
-        network.train(0.01, 0.1, 1, 0.4, 2, 25000, true, true, create_movie);        
-        if (create_movie) {
-            std::system("python create_movie.py");
-        } else {
-            network.export_validation_results("final");
-            std::system("python plot.py");
-        }
+        Network network(64, training_data, validation_data);
+        network.train(0.01, 0.001, 0.999, 0.5, 2, 25000, true, true);
+        write_weights_and_biases_to_csv(network.get_weights_hl(), network.get_biases_hl(), network.get_weights_ol(), network.get_biases_ol());      
+        network.export_validation_results();
+        std::system("python plot.py");
     }
 
     return 0;
