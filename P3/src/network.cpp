@@ -50,6 +50,9 @@ Network::Network(size_t num_hl_neurons, Data training_data, Data validation_data
 
     this->errors.hl = double_vector(this->num_hl_neurons, 0.0);
     this->errors.ol = 0.0;
+
+    this->deltas.hl = double_matrix(this->num_hl_neurons, double_vector(this->num_inputs, 0.0));
+    this->deltas.ol = double_vector(this->num_hl_neurons, 0.0);
 };
 
 void Network::train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
@@ -107,35 +110,50 @@ double_vector Network::get_hl_states() {
 };
 
 void Network::compute_errors(int target_index) {
-    this->errors.ol += g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0].get_state());
+    double error_ol = g_prime(this->neurons.ol[0].get_net_input()) * (this->training_data.targets[target_index] - this->neurons.ol[0].get_state());
+    this->errors.ol += error_ol;
+
+    for (size_t n = 0; n < this->num_hl_neurons; n++) {
+        this->deltas.ol[n] += error_ol * this->neurons.hl[n].get_state();
+    }
+
+    double_vector errors_hl = double_vector(this->num_hl_neurons, 0.0); 
 
     for (size_t j = 0; j < this->num_hl_neurons; j++) {
-        errors.hl[j] += this->errors.ol * this->weights.ol[j] * g_prime(this->neurons.hl[j].get_net_input());
+        errors_hl[j] = this->errors.ol * this->weights.ol[j] * g_prime(this->neurons.hl[j].get_net_input());
+        errors.hl[j] += errors_hl[j];
+    }
+
+    for (size_t m = 0; m < this->num_hl_neurons; m++) {
+        for (size_t n = 0; n < this->num_inputs; n++) {
+            this->deltas.hl[m][n] += errors_hl[m] * this->training_data.inputs[target_index][n];
+        }
     }
 };
 
 void Network::update_velocities(double learning_rate, int target_index, size_t batch_size) {
-    this->errors.ol /= static_cast<double>(batch_size); 
-
     this->old_velocities.hl = this->velocities.hl;
     this->old_velocities.ol = this->velocities.ol;
 
-    for (size_t m = 0; m < this->num_hl_neurons; m++) {
-        this->errors.hl[m] /= static_cast<double>(batch_size);
+    double batch_size_inverse = 1.0 / static_cast<double>(batch_size);
+    double product = learning_rate * batch_size_inverse;
 
+    for (size_t m = 0; m < this->num_hl_neurons; m++) {
         for (size_t n = 0; n < this->num_inputs; n++) {
-            this->velocities.hl[m][n] = learning_rate * this->errors.hl[m] * this->training_data.inputs[target_index][n];
+            this->velocities.hl[m][n] = product * this->deltas.hl[m][n];
         }
 
-        this->velocities.ol[m] = learning_rate * this->errors.ol * this->neurons.hl[m].get_state();
+        this->velocities.ol[m] = product * this->deltas.ol[m];
         
-        this->velocities.hl_bias[m] = learning_rate * this->errors.hl[m];
+        this->velocities.hl_bias[m] = product * this->errors.hl[m];
     }
 
-    this->velocities.ol_bias = learning_rate * this->errors.ol;
+    this->velocities.ol_bias = product * this->errors.ol;
 
+    this->errors.hl = double_vector(this->num_hl_neurons, 0.0);
     this->errors.ol = 0.0;
-    this->errors.hl.assign(this->num_hl_neurons, 0.0);
+    this->deltas.hl = double_matrix(this->num_hl_neurons, double_vector(this->num_inputs, 0.0));
+    this->deltas.ol = double_vector(this->num_hl_neurons, 0.0);
 }
 
 void Network::update_weights_and_biases(double momentum) {

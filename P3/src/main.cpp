@@ -16,9 +16,9 @@ int main() {
 
     shuffle_data(training_data);
 
-    int_vector nr_neurons = {16, 32, 64};
+    int_vector nr_neurons = {8, 16, 32, 64};
     double_vector learning_rates = {0.0005, 0.001, 0.005, 0.01};
-    double_vector momentums = {0.0, 0.3, 0.6};
+    double_vector momentums = {0.0, 0.5, 0.9};
     int_vector batch_sizes = {2, 4, 8, 16};
     bool grid_search = false;
 
@@ -35,8 +35,8 @@ int main() {
             }
         }
     } else {
-        Network network(64, training_data, validation_data);
-        network.train(0.01, 0.001, 0.999, 0.5, 2, 25000, true, true);
+        Network network(16, training_data, validation_data);
+        network.train(0.005, 0.0001, 1, 0.9, 4, 500, true, true);
         write_weights_and_biases_to_csv(network.get_weights_hl(), network.get_biases_hl(), network.get_weights_ol(), network.get_biases_ol());      
         network.export_validation_results();
         std::system("python plot.py");
@@ -47,14 +47,7 @@ int main() {
 
 
 /*
-C_min: 0.136
-32 0.0005 0.3 2
-C_min: 0.1364
-32 0.0005 0.6 2
-C_min: 0.1358
-32 0.001 0 2
-C_min: 0.1364
-32 0.001 0.3 2
-32 0.001 0 16
-C_min: 0.1364
+
+16 0.005, no decay, 0.9, 4 and 500 epochs gave me triangle shape
+
 */

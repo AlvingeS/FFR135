@@ -36,6 +36,11 @@ struct errors_struct {
     double ol;
 };
 
+struct deltas_struct {
+    double_matrix hl;
+    double_vector ol;
+};
+
 class Network {
     public:
         Network(size_t num_hl_neurons, Data training_data, Data validation_data);
@@ -95,6 +100,8 @@ class Network {
         neurons_struct neurons;
 
         errors_struct errors;
+
+        deltas_struct deltas;
 
         double C = 0.0;
         double H = 0.0;
