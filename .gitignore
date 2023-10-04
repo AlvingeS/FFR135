@@ -1,6 +1,2 @@
 *.png
-.vscode/
-*.py
-boundaries/
-obj/
-plots/
+*.o
