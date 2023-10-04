@@ -19,6 +19,13 @@ struct biases_struct {
     double ol;
 };
 
+struct parameters_struct {
+    double_matrix hl_w;
+    double_vector ol_w;
+    double_vector hl_b;
+    double ol_b;
+};
+
 struct velocities_struct {
     double_matrix hl;
     double_vector ol;
@@ -31,12 +38,12 @@ struct neurons_struct {
     neuron_vector ol;
 };
 
-struct errors_struct {
+struct cumulative_errors_struct {
     double_vector hl;
     double ol;
 };
 
-struct deltas_struct {
+struct cumulative_products_struct {
     double_matrix hl;
     double_vector ol;
 };
@@ -49,22 +56,15 @@ class Network {
             return this->neurons.ol[0].get_state();
         }
         
-        void train(double learning_rate, double min_learning_rate, double decay_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose);
+        void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose);
 
-        std::vector<std::vector<double>> get_weights_hl() {
-            return this->weights.hl;
-        }
-
-        std::vector<double> get_weights_ol() {
-            return this->weights.ol;
-        }
-
-        std::vector<double> get_biases_hl() {
-            return this->biases.hl;
-        }
-
-        double get_biases_ol() {
-            return this->biases.ol;
+        parameters_struct get_parameters() {
+            parameters_struct parameters;
+            parameters.hl_w = this->weights.hl;
+            parameters.ol_w = this->weights.ol;
+            parameters.hl_b = this->biases.hl;
+            parameters.ol_b = this->biases.ol;
+            return parameters;
         }
 
         void export_validation_results();
@@ -74,7 +74,7 @@ class Network {
         double g_prime(double x) {
             return 1 - std::pow(std::tanh(x), 2);
         }
-
+        
         void propagate_forward(const std::vector<double> &input_signals);
         std::vector<double> get_hl_states();
         void compute_errors(int target_index);
@@ -99,9 +99,9 @@ class Network {
         
         neurons_struct neurons;
 
-        errors_struct errors;
+        cumulative_errors_struct cumulative_errors;
 
-        deltas_struct deltas;
+        cumulative_products_struct cumulative_products;
 
         double C = 0.0;
         double H = 0.0;
