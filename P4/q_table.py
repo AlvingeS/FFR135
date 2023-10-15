@@ -1,6 +1,5 @@
 from state_action import State
 import random
-from icecream import ic
 import numpy as np
 import csv
 
@@ -37,15 +36,23 @@ class QTable:
     def move(self, current_state: State):
         self.check_if_initialized(current_state)
         selected_action = self.select_action(current_state)
-        future_state = current_state.apply_action(selected_action, self.player_symbol)
-        game_over = future_state.is_game_over()
-        reward = self.calculate_reward(future_state, self.player_symbol, game_over)
+        opponents_next_state = current_state.apply_action(selected_action, self.player_symbol)
+        game_over = opponents_next_state.is_game_over()
+        
+        if game_over:
+            reward = self.calculate_reward(opponents_next_state, self.player_symbol, game_over)
+            self.set_q_value(current_state, selected_action, reward)
+
+        if self.last_state is not None:
+            self.update_q_value(current_state)
+        
         self.update_old_state_action(current_state, selected_action)
-        return future_state, game_over
+        return opponents_next_state, game_over
     
     def reset_last_state_action(self):
         self.last_state = None
         self.last_action = None
+
 
     def evaluation_move(self, current_state: State):
         selected_action = self.select_action(current_state)
@@ -81,6 +88,7 @@ class QTable:
         self.last_state = current_state
         self.last_action = selected_action
 
+
     def calculate_reward(self, future_state: State, player_symbol: int, game_over: bool):
         if game_over:
             if future_state.winner == player_symbol:
@@ -90,16 +98,9 @@ class QTable:
         else:
             return 0.0
 
-    def update_q_value(self, opponent_q_table: dict, state: State, action: (int, int), reward: float, future_state: State, game_over: bool):
-        if game_over:
-            self.set_q_value(state, action, reward)
-        else:
-            best_opponent_q_value = 0
-            if future_state.board in opponent_q_table:
-                best_opponent_q_value = max(opponent_q_table[future_state.board].values())
-
-            update_rule = self.q_table[state.board][action] + self.learning_rate*(reward + best_opponent_q_value - self.q_table[state.board][action])
-            self.set_q_value(state, action, update_rule)
+    def update_q_value(self, current_state: State):
+            update_rule = self.q_table[self.last_state.board][self.last_action] + self.learning_rate*(max(self.q_table[current_state.board].values()) - self.q_table[self.last_state.board][self.last_action])
+            self.set_q_value(self.last_state, self.last_action, update_rule)
 
     def punish_last_move(self, punishment: float):
         self.set_q_value(self.last_state, self.last_action, punishment)
@@ -108,34 +109,25 @@ class QTable:
         self.epsilon = max(self.epsilon*self.epsilon_decay, self.minimum_epsilon)
 
     def save_q_table_to_csv(self, filename):
-        # Determine the number of states
         num_states = len(self.q_table)
         
-        # Initialize matrices to store the board states and Q-values
         board_matrix = np.zeros((3, num_states * 3), dtype=int)
         q_values_matrix = np.full((3, num_states * 3), 'NaN', dtype=object)
         
-        # Fill the matrices
         for idx, (state, actions) in enumerate(self.q_table.items()):
-            # Determine the columns where this state's data will go
             col_start = idx * 3
             col_end = (idx + 1) * 3
             
-            # Fill in the board state
             board_matrix[:, col_start:col_end] = np.array(state).reshape(3, 3)
             
-            # Fill in the Q-values
             for (row, col), q_value in actions.items():
                 q_values_matrix[row, col_start + col] = q_value
 
-        # Write to CSV
         with open(filename, 'w', newline='') as csvfile:
             csv_writer = csv.writer(csvfile)
             
-            # Write the board states
             for row in board_matrix:
                 csv_writer.writerow(row)
                 
-            # Write the Q-values
             for row in q_values_matrix:
                 csv_writer.writerow(row)

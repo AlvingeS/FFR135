@@ -1,4 +1,3 @@
-from icecream import ic
 class State:
     def __init__(self, board_size: int = 3):
         self.board_size = board_size

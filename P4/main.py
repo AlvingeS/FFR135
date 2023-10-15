@@ -18,7 +18,7 @@ players = [QTable(player_symbol=1, learning_rate=learning_rate, starting_epsilon
 
 # Win statistics
 player_one_rates, player_two_rates, draw_rates, intervals = [], [], [], []
-interval_length = 10000
+interval_length = 1000
 results = {1: 0, -1: 0, 0: 0}
 
 # Training loop
@@ -28,21 +28,21 @@ for i in range(num_episodes):
 
     # Game loop
     while (True):
-        new_state, game_over = players[turn].move(current_state)
+        opponents_next_state, game_over = players[turn].move(current_state)
 
         # On your own move, you can only win or draw the game
         if game_over:      
-            if new_state.winner == players[turn].player_symbol:
+            if opponents_next_state.winner == players[turn].player_symbol:
                 players[1 - turn].punish_last_move(players[1 - turn].loss_punishment)
-            else:
+            elif opponents_next_state.winner == 0: # !!!!!!!!! Osäker
                 players[1 - turn].punish_last_move(players[1 - turn].draw_punishment)
 
-            results[new_state.winner] += 1
+            results[opponents_next_state.winner] += 1
 
             break
 
         turn = 1 - turn
-        current_state = new_state
+        current_state = opponents_next_state
     
     # Reset last played moves/states and decay epsilon
     players[0].reset_last_state_action()
@@ -80,14 +80,14 @@ for i in range(test_runs):
     turn = 0
 
     while(True):
-        new_state, game_over = players[turn].evaluation_move(current_state=current_state)
+        opponents_next_state, game_over = players[turn].evaluation_move(current_state=current_state)
 
         if game_over:
-            results[new_state.winner] += 1
+            results[opponents_next_state.winner] += 1
             break
 
         turn = 1 - turn
-        current_state = new_state
+        current_state = opponents_next_state
 
 # Print results
 print("Player 1 wins: " + str(results[1]))
@@ -95,8 +95,10 @@ print("Player 2 wins: " + str(results[-1]))
 print("Draws: " + str(results[0]))
 
 ic(players[0].q_table[State().board])
+ic(len(players[0].q_table))
 
 # Save Q-tables if all games were draws
 if results[0] == test_runs:
     players[0].save_q_table_to_csv('player1.csv')
     players[1].save_q_table_to_csv('player2.csv')
+    print("Saved Q-tables to csv files")
