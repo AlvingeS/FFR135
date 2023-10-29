@@ -7,13 +7,26 @@
 #include <algorithm>
 #include <iomanip>
 
-Data read_csv(const std::string &filename) {
+Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs) {
     std::ifstream file(filename);
 
-    Data data = {double_matrix(), double_vector()};
+    Data data = {double_matrix(), double_matrix()};
 
     if (!file.is_open()) {
         std::cerr << "Could not open the file: " << filename << std::endl;
+        return data;
+    }
+
+    // Read the first line to determine the number of fields
+    std::string first_line;
+    std::getline(file, first_line);
+    size_t num_commas = std::count(first_line.begin(), first_line.end(), ',');
+    size_t total_fields = num_commas + 1;
+
+    if (total_fields != num_inputs + num_outputs) {
+        std::cerr << "Error: Number of fields in CSV (" << total_fields 
+                  << ") does not match num_inputs (" << num_inputs 
+                  << ") + num_outputs (" << num_outputs << ")" << std::endl;
         return data;
     }
 
@@ -23,19 +36,22 @@ Data read_csv(const std::string &filename) {
         std::istringstream s(line);
         std::string field;
 
-        // Read first input
-        std::getline(s, field, ',');
-        row.push_back(std::stod(field));
-
-        // Read second input
-        std::getline(s, field, ',');
-        row.push_back(std::stod(field));
+        for (size_t i = 0; i < num_inputs; ++i) {
+            std::getline(s, field, ',');
+            row.push_back(std::stod(field));
+        }
 
         data.inputs.push_back(row);
 
-        // Read target
-        std::getline(s, field, ',');
-        data.targets.push_back(std::stoi(field));
+        row.clear();
+
+        for (size_t i = 0; i < num_outputs; ++i) {
+            std::getline(s, field, ',');
+            row.push_back(std::stod(field));
+
+        }
+
+        data.targets.push_back(row);
     }
 
     file.close();
@@ -91,56 +107,13 @@ void shuffle_data(Data& data) {
     std::shuffle(indices.begin(), indices.end(), engine);
     
     double_matrix new_inputs(data_size);
-    double_vector new_targets(data_size);
+    double_matrix new_targets(data_size);
     
     for (size_t i = 0; i < data_size; ++i) {
         new_inputs[i] = data.inputs[indices[i]];
         new_targets[i] = data.targets[indices[i]];
     }
-    
+
     data.inputs.swap(new_inputs);
     data.targets.swap(new_targets);
-}
-
-void write_weights_and_biases_to_csv(
-    const std::vector<std::vector<double>> &w1,
-    const std::vector<double> &t1,
-    const std::vector<double> &w2,
-    double t2
-) {
-    std::ofstream w1_file("w1.csv");
-    std::ofstream t1_file("t1.csv");
-    std::ofstream w2_file("w2.csv");
-    std::ofstream t2_file("t2.csv");
-
-    if (!w1_file.is_open() || !t1_file.is_open() || !w2_file.is_open() || !t2_file.is_open()) {
-        std::cout << "Could not open one or more files for writing.\n";
-        return;
-    }
-
-    w1_file << std::fixed << std::setprecision(5);
-    t1_file << std::fixed << std::setprecision(5);
-    w2_file << std::fixed << std::setprecision(5);
-    t2_file << std::fixed << std::setprecision(5);
-
-    for (size_t i = 0; i < w1.size(); ++i) {
-        w1_file << w1[i][0] << "," << w1[i][1];
-        if (i < w1.size() - 1) w1_file << "\n";
-    }
-    w1_file.close();
-
-    for (size_t i = 0; i < t1.size(); ++i) {
-        t1_file << t1[i];
-        if (i < t1.size() - 1) t1_file << "\n";
-    }
-    t1_file.close();
-
-    for (size_t i = 0; i < w2.size(); ++i) {
-        w2_file << w2[i];
-        if (i < w2.size() - 1) w2_file << ",";
-    }
-    w2_file.close();
-
-    t2_file << t2;
-    t2_file.close();
 }

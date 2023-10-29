@@ -5,8 +5,11 @@
 #include <vector>
 
 int main() {
-    Data training_data = read_csv("data/training_set.csv");
-    Data validation_data = read_csv("data/validation_set.csv");
+    size_t num_inputs = 2;
+    size_t num_outputs = 1;
+
+    Data training_data = read_csv("data/training_set.csv", num_inputs, num_outputs);
+    Data validation_data = read_csv("data/validation_set.csv", num_inputs, num_outputs);
 
     // Normalize the data based on the training data
     normalize_input_data(training_data, training_data);
@@ -14,12 +17,11 @@ int main() {
 
     shuffle_data(training_data);
 
-    // Create and train the network
-    Network network(32, training_data, validation_data);
-    network.train(0.005, 0.7, 2, 500, true, true);
-    parameters_struct params = network.get_parameters();
-    write_weights_and_biases_to_csv(params.hl_w, params.hl_b, params.ol_w, params.ol_b);      
+    arch_struct arch = {num_inputs, {32}, num_outputs};
 
+    // Create and train the network
+    Network network(arch, training_data, validation_data);
+    network.train(0.005, 0.7, 128, 1000, true, true);   
 
     return 0;
 };

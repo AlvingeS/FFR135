@@ -7,9 +7,11 @@
 typedef std::vector<double> double_vector;
 typedef std::vector<int> int_vector;
 typedef std::vector<double_vector> double_matrix;
+typedef std::vector<double_matrix> double_tensor;
+
 struct Data {
     double_matrix inputs;
-    double_vector targets;
+    double_matrix targets;
 };
 
 template <typename T>
