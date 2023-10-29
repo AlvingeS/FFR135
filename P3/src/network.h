@@ -8,6 +8,7 @@
 #include <cmath>
 
 typedef std::vector<Neuron> neuron_vector;
+typedef std::vector<neuron_vector> neuron_matrix;
 
 struct arch_struct {
     size_t num_inputs;
@@ -17,11 +18,6 @@ struct arch_struct {
     int num_hls() const {
         return this->hl_sizes.size();
     }
-};
-
-struct weights_struct {
-    double_matrix hl;
-    double_matrix ol;
 };
 
 struct biases_struct {
@@ -34,21 +30,6 @@ struct velocities_struct {
     double_matrix ol;
     double_vector hl_bias;
     double_vector ol_bias;
-};
-
-struct neurons_struct {
-    neuron_vector hl;
-    neuron_vector ol;
-};
-
-struct cumulative_errors_struct {
-    double_vector hl;
-    double_vector ol;
-};
-
-struct cumulative_products_struct {
-    double_matrix hl;
-    double_matrix ol;
 };
 
 class Network {
@@ -70,7 +51,6 @@ class Network {
         }
         
         void propagate_forward(const std::vector<double> &input_signals);
-        std::vector<double> get_hl_states();
         void compute_errors(int target_index);
         void update_velocities(double learning_rate, int target_index, size_t batch_size);
         void update_weights_and_biases(double momentum);
@@ -80,23 +60,23 @@ class Network {
         size_t num_validation_patterns;
         
         arch_struct arch;
+        int_vector layer_heights;
+        size_t num_layers;
         
         // Data storage
         Data training_data;
         Data validation_data;
 
-        
-        weights_struct weights;
+        double_tensor weights;
         biases_struct biases;
 
         velocities_struct velocities;
         velocities_struct old_velocities;
         
-        neurons_struct neurons;
+        neuron_matrix neurons;
 
-        cumulative_errors_struct cumulative_errors;
-
-        cumulative_products_struct cumulative_products;
+        double_matrix cumulative_errors;
+        double_tensor cumulative_products;
 
         double C = 0.0;
         double H = 0.0;

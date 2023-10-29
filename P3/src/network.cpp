@@ -10,7 +10,15 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
     : arch(arch),
       training_data(training_data),
       validation_data(validation_data) {
-    
+
+    // Initialize layer heights
+    layer_heights = int_vector(arch.num_hls() + 1, 0);
+    for (size_t i = 0; i < arch.num_hls(); i++) {
+        layer_heights[i] = arch.hl_sizes[i];
+    }
+    layer_heights[arch.num_hls()] = arch.num_outputs;
+    num_layers = arch.num_hls() + 1;
+
     // Initialize pattern counts
     num_patterns = training_data.inputs.size();
     num_validation_patterns = validation_data.inputs.size();
@@ -92,36 +100,24 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
 }
 
 void Network::propagate_forward(const double_vector &input_signals) {
-    for (size_t i = 0; i < this->arch.hl_sizes[0]; i++) {
-        this->neurons.hl[i].calculate_net_input(input_signals);
-        this->neurons.hl[i].update_state();
+    double_vector prev_layer_states = input_signals;
+    for (size_t l = 0; l < this->num_layers; l++) {
+        double_vector layer_states(this->layer_heights[l]);
+        for (size_t i = 0; i < this->layer_heights[l]; i++) {
+            this->neurons[l][i].calculate_net_input(prev_layer_states);
+            this->neurons[l][i].update_state();
+            layer_states[i] = this->neurons[l][i].get_state();
+        }
+        prev_layer_states = layer_states;
     }
-
-    this->neurons.ol[0].calculate_net_input(this->get_hl_states());
-    this->neurons.ol[0].update_state();
-};
-
-double_vector Network::get_hl_states() {
-    double_vector hl_states(this->arch.hl_sizes[0]);
-
-    for (size_t i = 0; i < this->arch.hl_sizes[0]; i++) {
-        hl_states[i] = this->neurons.hl[i].get_state();
-    }
-
-    return hl_states;
 };
 
 void Network::compute_errors(int target_index) {
-    // Compute output layer error and accumulate
+
     double_vector errors_ol(this->arch.num_outputs, 0.0);
-
-    for (size_t i = 0; i < this->arch.num_outputs; i++) {
-        errors_ol[i] = g_prime(this->neurons.ol[i].get_net_input()) * (this->training_data.targets[target_index][i] - this->neurons.ol[i].get_state());
-        this->cumulative_errors.ol[i] += errors_ol[i];
-    }
-
-    // Accumulate output layer products
     for (size_t m = 0; m < this->arch.num_outputs; m++) {
+        errors_ol[m] = g_prime(this->neurons.[l][m].get_net_input()) * (this->training_data.targets[target_index][m] - this->neurons.ol[m].get_state());
+        this->cumulative_errors.ol[m] += errors_ol[m];
         for (size_t n = 0; n < this->arch.hl_sizes[0]; n++) {
             this->cumulative_products.ol[m][n] += errors_ol[m] * this->neurons.hl[n].get_state();
         }
@@ -143,6 +139,42 @@ void Network::compute_errors(int target_index) {
         }
     }
 }
+
+void Network::compute_errors(int target_index) {
+
+    // Compute errors for output layer
+    double_vector prev_error(this->arch.num_outputs, 0.0);
+    size_t last_layer_index = this->num_layers - 1;
+
+    for (size_t i = 0; i < this->arch.num_outputs; i++) {
+        prev_error[i] = g_prime(this->neurons[last_layer_index][i].get_net_input()) * (this->training_data.targets[target_index][i] - this->neurons[last_layer_index][i].get_state());
+        this->cumulative_errors[last_layer_index][i] += prev_error[i];
+        
+        // Accumulate products
+        for (size_t n = 0; n < this->layer_heights[last_layer_index - 1]; n++) {
+            this->cumulative_products[last_layer_index][i][n] += prev_error[i] * this->neurons[last_layer_index - 1][n].get_state();
+        }
+    }
+
+    // Propagate errors backwards
+    for (size_t l = last_layer_index; l >= 1; l--) {      
+        double_vector layer_errors(this->layer_heights[l], 0.0);
+
+        for (size_t j = 0; j < this->layer_heights[l - 1]; j++) {
+            for (size_t i = 0; i < this->layer_heights[l]; i++) {
+                layer_errors[j] += prev_error[i] * this->weights[l][i][j] * g_prime(this->neurons[l - 1][j].get_net_input());
+            }
+    
+            this->cumulative_errors[l][j] += layer_errors[j];
+
+            for (size_t i = 0; n < this->; n++) {
+                this->cumulative_products[l][i][j] += layer_errors[m] * this->neurons.hl[n].get_state();
+            }
+        }
+    }
+}
+
+
 
 void Network::update_velocities(double learning_rate, int target_index, size_t batch_size) {
     this->old_velocities.hl = this->velocities.hl;

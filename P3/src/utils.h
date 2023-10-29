@@ -60,3 +60,4 @@ T mean_of_vector(std::vector<T> &vec) {
 
     return sum / static_cast<T>(num_elems);
 }
+
