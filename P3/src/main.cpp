@@ -20,5 +20,6 @@ int main() {
     parameters_struct params = network.get_parameters();
     write_weights_and_biases_to_csv(params.hl_w, params.hl_b, params.ol_w, params.ol_b);      
 
+
     return 0;
 };
