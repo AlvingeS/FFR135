@@ -20,24 +20,18 @@ struct arch_struct {
     }
 };
 
-struct biases_struct {
-    double_vector hl;
-    double_vector ol;
-};
-
-struct velocities_struct {
-    double_matrix hl;
-    double_matrix ol;
-    double_vector hl_bias;
-    double_vector ol_bias;
-};
-
 class Network {
     public:
         Network(arch_struct arch, Data training_data, Data validation_data);
         
-        double get_output() {
-            return this->neurons.ol[0].get_state();
+        double_vector get_output() {
+            double_vector output(this->layer_heights[this->num_layers - 1], 0.0);
+
+            for (size_t i = 0; i < this->layer_heights[this->num_layers - 1]; i++) {
+                output[i] = this->neurons[this->num_layers - 1][i].get_state();
+            }
+
+            return output;
         }
         
         void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose);
@@ -68,10 +62,12 @@ class Network {
         Data validation_data;
 
         double_tensor weights;
-        biases_struct biases;
+        double_matrix biases;
 
-        velocities_struct velocities;
-        velocities_struct old_velocities;
+        double_tensor velocities_w;
+        double_matrix velocities_b;
+        double_tensor velocities_w_old;
+        double_matrix velocities_b_old;
         
         neuron_matrix neurons;
 
