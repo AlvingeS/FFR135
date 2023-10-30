@@ -124,33 +124,33 @@ void Network::compute_errors(int target_index) {
         this->cumulative_errors[last_layer_index][i] += prev_error[i];
         
         // Accumulate products
-        for (size_t n = 0; n < this->layer_heights[last_layer_index - 1]; n++) {
+        for (size_t n = 0; n < this->layer_heights[last_layer_index]; n++) {
             this->cumulative_products[last_layer_index][i][n] += prev_error[i] * this->neurons[last_layer_index - 1][n].get_state();
         }
     }
 
     // Propagate errors backwards through hidden layers until and not including last hidden layer
-    for (size_t l = last_layer_index - 1; l >= 1; l--) {      
+    for (size_t l = last_layer_index; l >= 2; l--) {      
         double_vector layer_errors(this->layer_heights[l], 0.0);
 
         for (size_t j = 0; j < this->layer_heights[l]; j++) {
             for (size_t i = 0; i < this->layer_heights[l + 1]; i++) {
-                layer_errors[j] += prev_error[i] * this->weights[l][i][j] * g_prime(this->neurons[l][j].get_net_input());
+                layer_errors[j] += prev_error[i] * this->weights[l][i][j] * g_prime(this->neurons[l - 1][j].get_net_input());
             }
     
-            this->cumulative_errors[l][j] += layer_errors[j];
+            this->cumulative_errors[l - 1][j] += layer_errors[j];
 
             for (size_t n = 0; n < this->layer_heights[l - 1]; n++) {
-                this->cumulative_products[l][j][n] += layer_errors[j] * this->neurons[l - 1][n].get_state();
+                this->cumulative_products[l - 1][j][n] += layer_errors[j] * this->neurons[l - 2][n].get_state();
             }
         }
         prev_error = layer_errors;
     }
 
     // Compute errors for first hidden layer
-    for (size_t j = 0; j < this->layer_heights[0]; j++) {
-        double_vector layer_errors = double_vector(this->layer_heights[0], 0.0); 
-        for (size_t i = 0; i < this->layer_heights[1]; i++) {
+    double_vector layer_errors = double_vector(this->layer_heights[1], 0.0); 
+    for (size_t j = 0; j < this->layer_heights[1]; j++) {
+        for (size_t i = 0; i < this->layer_heights[2]; i++) {
             layer_errors[j] += prev_error[i] * this->weights[0][i][j] * g_prime(this->neurons[0][j].get_net_input());
         }
 
