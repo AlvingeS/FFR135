@@ -12,12 +12,12 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
       validation_data(validation_data) {
 
     // Initialize layer heights
-    layer_heights = int_vector(arch.num_hls() + 1, 0);
+    layer_heights = int_vector(arch.num_hls() + 2, 0);
     layer_heights[0] = arch.num_inputs;
     for (size_t i = 0; i < arch.num_hls(); i++) {
         layer_heights[i + 1] = arch.hl_sizes[i];
     }
-    layer_heights[arch.num_hls()] = arch.num_outputs;
+    layer_heights[arch.num_hls() + 1] = arch.num_outputs;
     num_layers = arch.num_hls() + 2;
 
     // Initialize pattern counts
@@ -50,8 +50,8 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
     }
 
     // Initialize hidden layer neurons
-    neurons.reserve(num_layers);
-    for (size_t l = 0; l < num_layers - 1; l++) {        
+    neurons.reserve(this->num_layers - 1);
+    for (size_t l = 0; l < this->num_layers - 1; l++) {        
         weights[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
         cumulative_products[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
         velocities_w[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
@@ -62,12 +62,15 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
         velocities_b[l] = double_vector(layer_heights[l], 0.0);
         velocities_b_old[l] = double_vector(layer_heights[l], 0.0);
 
+        neuron_vector layer_neurons;
+        layer_neurons.reserve(layer_heights[l + 1]);
         for (size_t i = 0; i < layer_heights[l + 1]; i++) {
             for (size_t j = 0; j < layer_heights[l]; j++) {
                 weights[l][i][j] = distributions[l](generator);
             }
-            neurons[l].emplace_back(Neuron(&weights[l][i], &biases[l][i]));
+            layer_neurons.emplace_back(Neuron(&weights[l][i], &biases[l][i]));
         }
+        neurons.emplace_back(layer_neurons);
     }
 }
 
