@@ -28,7 +28,7 @@ class Network {
             double_vector output(this->layer_heights[this->num_layers - 1], 0.0);
 
             for (size_t i = 0; i < this->layer_heights[this->num_layers - 1]; i++) {
-                output[i] = this->neurons[this->num_layers - 1][i].get_state();
+                output[i] = this->neurons[this->num_layers - 2][i].get_state();
             }
 
             return output;
