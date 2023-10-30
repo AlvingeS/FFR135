@@ -101,10 +101,10 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
     }
 }
 
-void Network::propagate_forward(const double_vector &input_signals) {
+void Network::propagate_forward(const double_vector &input_saignals) {
     double_vector prev_layer_states = input_signals;
-    for (size_t l = 0; l < this->num_layers - 1; l++) {
-        double_vector layer_states(this->layer_heights[l + 1]);
+    for (size_t l = 1; l < this->num_layers - 1; l++) {
+        double_vector layer_states(this->layer_heights[l]);
         for (size_t i = 0; i < this->layer_heights[l + 1]; i++) {
             this->neurons[l][i].calculate_net_input(prev_layer_states);
             this->neurons[l][i].update_state();
