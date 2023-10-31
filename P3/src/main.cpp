@@ -17,7 +17,7 @@ int main() {
 
     shuffle_data(training_data);
 
-    arch_struct arch = {num_inputs, {32}, num_outputs};
+    arch_struct arch = {num_inputs, {32, 16, 8}, num_outputs};
 
     // Create and train the network
     Network network(arch, training_data, validation_data);

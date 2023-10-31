@@ -88,10 +88,6 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
 
         this->validate(i, measure_H, verbose);
 
-        if (this->H < 2100) {
-            break;
-        }
-
         if (this->H < H_min) {
             H_min = this->H;
         }
