@@ -18,55 +18,52 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
         layer_heights[i + 1] = arch.hl_sizes[i];
     }
     layer_heights[arch.num_hls() + 1] = arch.num_outputs;
-    num_layers = arch.num_hls() + 2;
+    L = arch.num_hls() + 2 - 1;
 
     // Initialize pattern counts
     num_patterns = training_data.inputs.size();
     num_validation_patterns = validation_data.inputs.size();
 
     // Initialize weights and biases
-    weights = double_tensor(num_layers, double_matrix(0, double_vector(0, 0.0)));
-    biases = double_matrix(num_layers, double_vector(0, 0.0));
+    weights = double_tensor(L, double_matrix(0, double_vector(0, 0.0)));
+    biases = double_matrix(L, double_vector(0, 0.0));
     
     // Initialize cumulative errors and products
-    cumulative_products = double_tensor(num_layers, double_matrix(0, double_vector(0, 0.0)));
-    cumulative_errors = double_matrix(num_layers, double_vector(0, 0.0));
+    cumulative_products = double_tensor(L, double_matrix(0, double_vector(0, 0.0)));
+    cumulative_errors = double_matrix(L, double_vector(0, 0.0));
 
     // Initialize velocities
-    velocities_w = double_tensor(num_layers, double_matrix(0, double_vector(0, 0.0)));
-    velocities_b = double_matrix(num_layers, double_vector(0, 0.0));
+    velocities_w = double_tensor(L, double_matrix(0, double_vector(0, 0.0)));
+    velocities_b = double_matrix(L, double_vector(0, 0.0));
 
     // Initialize old velocities
-    velocities_w_old = double_tensor(num_layers, double_matrix(0, double_vector(0, 0.0)));
-    velocities_b_old = double_matrix(num_layers, double_vector(0, 0.0));
+    velocities_w_old = double_tensor(L, double_matrix(0, double_vector(0, 0.0)));
+    velocities_b_old = double_matrix(L, double_vector(0, 0.0));
 
-    // Initialize random number generators for weights
+    // Generator
     std::default_random_engine generator;
-    std::vector<std::normal_distribution<double>> distributions;
-
-    for (size_t i = 1; i < num_layers; i++) {
-        double std_dev = std::sqrt(1 / static_cast<double>(layer_heights[i - 1]));
-        distributions.emplace_back(std::normal_distribution<double>(0.0, std_dev));
-    }
 
     // Initialize hidden layer neurons
-    neurons.reserve(this->num_layers - 1);
-    for (size_t l = 0; l < this->num_layers - 1; l++) {        
+    neurons.reserve(L);
+    for (size_t l = 0; l < L; l++) {
         weights[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
         cumulative_products[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
         velocities_w[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
         velocities_w_old[l] = double_matrix(this->layer_heights[l + 1], double_vector(this->layer_heights[l], 0.0));
 
-        biases[l] = double_vector(layer_heights[l], 0.0);
-        cumulative_errors[l] = double_vector(layer_heights[l], 0.0);
-        velocities_b[l] = double_vector(layer_heights[l], 0.0);
-        velocities_b_old[l] = double_vector(layer_heights[l], 0.0);
+        biases[l] = double_vector(layer_heights[l + 1], 0.0);
+        cumulative_errors[l] = double_vector(layer_heights[l + 1], 0.0);
+        velocities_b[l] = double_vector(layer_heights[l + 1], 0.0);
+        velocities_b_old[l] = double_vector(layer_heights[l + 1], 0.0);
+
+        double std_dev = std::sqrt(1 / static_cast<double>(layer_heights[l]));
+        std::normal_distribution<double> distribution = std::normal_distribution<double>(0.0, std_dev);
 
         neuron_vector layer_neurons;
         layer_neurons.reserve(layer_heights[l + 1]);
         for (size_t i = 0; i < layer_heights[l + 1]; i++) {
             for (size_t j = 0; j < layer_heights[l]; j++) {
-                weights[l][i][j] = distributions[l](generator);
+                weights[l][i][j] = distribution(generator);
             }
             layer_neurons.emplace_back(Neuron(&weights[l][i], &biases[l][i]));
         }
@@ -101,14 +98,14 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
     }
 }
 
-void Network::propagate_forward(const double_vector &input_saignals) {
+void Network::propagate_forward(const double_vector &input_signals) {
     double_vector prev_layer_states = input_signals;
-    for (size_t l = 1; l < this->num_layers - 1; l++) {
+    for (size_t l = 1; l <= L; l++) {
         double_vector layer_states(this->layer_heights[l]);
-        for (size_t i = 0; i < this->layer_heights[l + 1]; i++) {
-            this->neurons[l][i].calculate_net_input(prev_layer_states);
-            this->neurons[l][i].update_state();
-            layer_states[i] = this->neurons[l][i].get_state();
+        for (size_t j = 0; j < this->layer_heights[l]; j++) {
+            this->neurons[l - offset][j].calculate_net_input(prev_layer_states);
+            this->neurons[l - offset][j].update_state();
+            layer_states[j] = this->neurons[l - offset][j].get_state();
         }
         prev_layer_states = layer_states;
     }
@@ -117,49 +114,35 @@ void Network::propagate_forward(const double_vector &input_saignals) {
 void Network::compute_errors(int target_index) {
     // Compute errors for output layer
     double_vector prev_error(this->arch.num_outputs, 0.0);
-    size_t last_layer_index = this->num_layers - 2;
 
     for (size_t i = 0; i < this->arch.num_outputs; i++) {
-        prev_error[i] = g_prime(this->neurons[last_layer_index][i].get_net_input()) * (this->training_data.targets[target_index][i] - this->neurons[last_layer_index][i].get_state());
-        this->cumulative_errors[last_layer_index][i] += prev_error[i];
+        prev_error[i] = g_prime(this->neurons[L - offset][i].get_net_input()) * (this->training_data.targets[target_index][i] - this->neurons[L - offset][i].get_state());
+        this->cumulative_errors[L - offset][i] += prev_error[i];
         
         // Accumulate products
-        for (size_t n = 0; n < this->layer_heights[last_layer_index]; n++) {
-            this->cumulative_products[last_layer_index][i][n] += prev_error[i] * this->neurons[last_layer_index - 1][n].get_state();
+        for (size_t n = 0; n < this->layer_heights[L - 1]; n++) {
+            this->cumulative_products[L - offset][i][n] += prev_error[i] * this->neurons[L - 1 - offset][n].get_state();
         }
     }
 
     // Propagate errors backwards through hidden layers until and not including last hidden layer
-    for (size_t l = last_layer_index; l >= 2; l--) {      
-        double_vector layer_errors(this->layer_heights[l], 0.0);
+    double neuron_state = 0.0;
+    for (size_t l = L; l >= 2; l--) {  
+        double_vector layer_errors(this->layer_heights[l - 1], 0.0);
 
-        for (size_t j = 0; j < this->layer_heights[l]; j++) {
-            for (size_t i = 0; i < this->layer_heights[l + 1]; i++) {
-                layer_errors[j] += prev_error[i] * this->weights[l][i][j] * g_prime(this->neurons[l - 1][j].get_net_input());
+        for (size_t j = 0; j < this->layer_heights[l - 1]; j++) {
+            for (size_t i = 0; i < this->layer_heights[l]; i++) {
+                layer_errors[j] += prev_error[i] * this->weights[l - offset][i][j] * g_prime(this->neurons[l - 1 - offset][j].get_net_input());
             }
     
-            this->cumulative_errors[l - 1][j] += layer_errors[j];
+            this->cumulative_errors[l - 1 - offset][j] += layer_errors[j];
 
-            for (size_t n = 0; n < this->layer_heights[l - 1]; n++) {
-                this->cumulative_products[l - 1][j][n] += layer_errors[j] * this->neurons[l - 2][n].get_state();
+            for (size_t n = 0; n < this->layer_heights[l - 2]; n++) {
+                neuron_state = (l - 2 == 0) ? this->training_data.inputs[target_index][n] : this->neurons[l - 2 - offset][n].get_state();
+                this->cumulative_products[l - 1 - offset][j][n] += layer_errors[j] * neuron_state; 
             }
         }
         prev_error = layer_errors;
-    }
-
-    // Compute errors for first hidden layer
-    double_vector layer_errors = double_vector(this->layer_heights[1], 0.0); 
-    for (size_t j = 0; j < this->layer_heights[1]; j++) {
-        for (size_t i = 0; i < this->layer_heights[2]; i++) {
-            layer_errors[j] += prev_error[i] * this->weights[0][i][j] * g_prime(this->neurons[0][j].get_net_input());
-        }
-
-        this->cumulative_errors[0][j] += layer_errors[j];
-
-        // Accumulate products
-        for (size_t n = 0; n < this->arch.num_inputs; n++) {
-            this->cumulative_products[0][j][n] += layer_errors[j] * this->training_data.inputs[target_index][n];
-        }
     }
 }
 
@@ -169,26 +152,26 @@ void Network::update_velocities(double learning_rate, int target_index, size_t b
 
     double scaled_learning_rate = learning_rate / static_cast<double>(batch_size);
 
-    for (size_t l = 0; l < this->num_layers - 1; l++) {
-        for (size_t m = 0; m < this->layer_heights[l + 1]; m++) {
-            for (size_t n = 0; n < this->layer_heights[l]; n++) {
-                this->velocities_w[l][m][n] = scaled_learning_rate * this->cumulative_products[l][m][n];
-                this->cumulative_products[l][m][n] = 0.0;
+    for (size_t l = 1; l <= L; l++) {
+        for (size_t m = 0; m < this->layer_heights[l]; m++) {
+            for (size_t n = 0; n < this->layer_heights[l - 1]; n++) {
+                this->velocities_w[l - offset][m][n] = scaled_learning_rate * this->cumulative_products[l - offset][m][n];
+                this->cumulative_products[l - offset][m][n] = 0.0;
             }
-            this->velocities_b[l][m] = scaled_learning_rate * this->cumulative_errors[l][m];
-            this->cumulative_errors[l][m] = 0.0;
+            this->velocities_b[l - offset][m] = scaled_learning_rate * this->cumulative_errors[l - offset][m];
+            this->cumulative_errors[l - offset][m] = 0.0;
         }
     }    
 }
 
 void Network::update_weights_and_biases(double momentum) {
     // Update hidden layer weights and biases
-    for (size_t l = 0; l < this->num_layers - 1; l++) {
-        for (size_t m = 0; m < this->layer_heights[l + 1]; m++) {
-            for (size_t n = 0; n < this->layer_heights[l]; n++) {
-                this->weights[l][m][n] += this->velocities_w[l][m][n] + momentum * this->velocities_w_old[l][m][n];
+    for (size_t l = 1; l <= L; l++) {
+        for (size_t m = 0; m < this->layer_heights[l]; m++) {
+            for (size_t n = 0; n < this->layer_heights[l - 1]; n++) {
+                this->weights[l - offset][m][n] += this->velocities_w[l - offset][m][n] + momentum * this->velocities_w_old[l - offset][m][n];
             }
-            this->biases[l][m] -= this->velocities_b[l][m];
+            this->biases[l - offset][m] -= this->velocities_b[l - offset][m];
         }
     }
 }

@@ -17,11 +17,11 @@ int main() {
 
     shuffle_data(training_data);
 
-    arch_struct arch = {num_inputs, {32, 16}, num_outputs};
+    arch_struct arch = {num_inputs, {32}, num_outputs};
 
     // Create and train the network
     Network network(arch, training_data, validation_data);
-    network.train(0.005, 0.7, 2, 500, true, true);   
+    network.train(0.005, 0.7, 2, 1000, true, true);   
 
     return 0;
 };

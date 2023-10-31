@@ -25,10 +25,10 @@ class Network {
         Network(arch_struct arch, Data training_data, Data validation_data);
         
         double_vector get_output() {
-            double_vector output(this->layer_heights[this->num_layers - 1], 0.0);
+            double_vector output(this->layer_heights[L], 0.0);
 
-            for (size_t i = 0; i < this->layer_heights[this->num_layers - 1]; i++) {
-                output[i] = this->neurons[this->num_layers - 2][i].get_state();
+            for (size_t i = 0; i < this->layer_heights[L]; i++) {
+                output[i] = this->neurons[L - 1][i].get_state();
             }
 
             return output;
@@ -55,7 +55,8 @@ class Network {
         
         arch_struct arch;
         int_vector layer_heights;
-        size_t num_layers;
+        size_t L;
+        size_t offset = 1;
         
         // Data storage
         Data training_data;
