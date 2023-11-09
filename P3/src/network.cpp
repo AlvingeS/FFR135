@@ -18,6 +18,7 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
       cumulative_products(L),
       velocities_w(L),
       velocities_w_old(L),
+      deltas(L),
       neuron_states(L),
       net_inputs(L),
       biases(L),
@@ -42,6 +43,7 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
         velocities_w[l] = Matrix<double>(this->layer_heights[l + 1], this->layer_heights[l], 0.0);
         velocities_w_old[l] = Matrix<double>(this->layer_heights[l + 1], this->layer_heights[l], 0.0);
 
+        deltas[l] = Vector<double>(this->layer_heights[l + 1], 0.0);
         net_inputs[l] = Vector<double>(this->layer_heights[l + 1], 0.0);
         neuron_states[l] = Vector<double>(this->layer_heights[l + 1], 0.0);
         biases[l] = Vector<double>(layer_heights[l + 1], 0.0);
@@ -64,6 +66,7 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
 
 void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
     double H_min = 3000;
+    this->scaled_learning_rate = learning_rate / static_cast<double>(batch_size);
 
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
@@ -87,44 +90,43 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
 
 void Network::propagate_forward(const Vector<double> &input_signals) {
     for (size_t l = 1; l <= L; l++) {
-        Vector<double> signals(this->layer_heights[l - 1], 0.0);
-        signals = (l - 1 == 0) ? input_signals : neuron_states[l - 1 - offset];
+        if (l - 1 == 0) {
+            net_inputs[l - offset] = (weights[l - offset] * input_signals - biases[l - offset]);
+        } else {
+            net_inputs[l - offset] = (weights[l - offset] * neuron_states[l - 1 - offset] - biases[l - offset]);
+        }
 
-        net_inputs[l - offset] = (weights[l - offset] * signals - biases[l - offset]);
         neuron_states[l - offset] = net_inputs[l - offset].apply_function(g);
     }
 }
 
 void Network::compute_errors(int target_index) {
     // Compute errors for output layer
-    Vector<double> prev_errors(this->layer_heights[L], 0.0);
-    prev_errors = (net_inputs[L - offset].apply_function(g_prime)) % (this->training_data.targets[target_index] - this->neuron_states[L - offset]);
-    cumulative_errors[L - offset] += prev_errors;
-    cumulative_products[L - offset] += Matrix<double>::outer_product(prev_errors, neuron_states[L - 1 - offset]);
+    deltas[L - offset] = (net_inputs[L - offset].apply_function(g_prime)) % (this->training_data.targets[target_index] - this->neuron_states[L - offset]);
+    cumulative_errors[L - offset] += deltas[L - offset];
+    Matrix<double>::outer_product(deltas[L - offset], neuron_states[L - 1 - offset], cumulative_products[L - offset]);
 
     for (size_t l = L; l >= 2; l--) {
-        Vector<double> layer_errors(this->layer_heights[l - 1], 0.0);
+        deltas[l - 1 - offset] = net_inputs[l - 1 - offset].apply_function(g_prime) % (weights[l - offset].transpose() * deltas[l - offset]);
+        cumulative_errors[l - 1 - offset] += deltas[l - 1 - offset];
 
-        layer_errors = net_inputs[l - 1 - offset].apply_function(g_prime) % (weights[l - offset].transpose() * prev_errors);
-        cumulative_errors[l - 1 - offset] += layer_errors;
-        Vector<double> states = (l - 2 == 0) ? this->training_data.inputs[target_index] : neuron_states[l - 2 - offset];
-        cumulative_products[l - 1 - offset] += Matrix<double>::outer_product(layer_errors, states);
-
-        prev_errors = layer_errors;
+        if (l - 2 == 0) {
+            Matrix<double>::outer_product(deltas[l - 1 - offset], this->training_data.inputs[target_index], cumulative_products[l - 1 - offset]);
+        } else {
+            Matrix<double>::outer_product(deltas[l - 1 - offset], neuron_states[l - 2 - offset], cumulative_products[l - 1 - offset]);
+        }
     }
 }
 
 void Network::update_velocities(double learning_rate, int target_index, size_t batch_size) {
     this->velocities_w_old = this->velocities_w;
         
-    double scaled_learning_rate = learning_rate / static_cast<double>(batch_size);
-
     for (size_t l = 1; l <= L; l++) {
         velocities_w[l - offset] = this->cumulative_products[l - offset] * scaled_learning_rate;
         velocities_b[l - offset] = this->cumulative_errors[l - offset] * scaled_learning_rate;
     
-        this->cumulative_products[l - offset] = Matrix<double>(this->layer_heights[l], this->layer_heights[l - 1], 0.0);
-        this->cumulative_errors[l - offset] = Vector<double>(this->layer_heights[l], 0.0);
+        cumulative_errors[l - offset].reset();
+        cumulative_products[l - offset].reset();
     }
 }
 

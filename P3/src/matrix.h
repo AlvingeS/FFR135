@@ -141,17 +141,15 @@ public:
         return result;
     }
 
-    static Matrix outer_product(const Vector<T>& v1, const Vector<T>& v2) {
+    static void outer_product(const Vector<T>& v1, const Vector<T>& v2, Matrix<T>& result) {
         size_t n = v1.size();
         size_t m = v2.size();
 
-        Matrix result(n, m, T());
         for (size_t i = 0; i < n; ++i) {
             for (size_t j = 0; j < m; ++j) {
                 result[i][j] = v1[i] * v2[j];
             }
         }
-        return result;
     }
 
     // Transpose
@@ -174,6 +172,12 @@ public:
             }
         }
         return result;
+    }
+
+    void reset() {
+        for (size_t i = 0; i < rows; ++i) {
+            data[i].reset();
+        }
     }
 
     // Dimensions

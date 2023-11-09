@@ -122,6 +122,12 @@ public:
         std::cout << std::endl;
     }
 
+    void reset() {
+        for (size_t i = 0; i < data.size(); ++i) {
+            data[i] = T();
+        }
+    }
+
     double sum() const {
         double sum = 0.0;
         for (size_t i = 0; i < data.size(); ++i) {

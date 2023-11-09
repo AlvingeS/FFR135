@@ -59,12 +59,15 @@ class Network {
         MatrixCollection<double> velocities_w;
         MatrixCollection<double> velocities_w_old;
 
+        VectorCollection<double> deltas;
         VectorCollection<double> neuron_states;
         VectorCollection<double> net_inputs;
         VectorCollection<double> biases;
         VectorCollection<double> cumulative_errors;
         VectorCollection<double> velocities_b;
         VectorCollection<double> velocities_b_old;
+
+        double scaled_learning_rate;
 
         double C = 0.0;
         double H = 0.0;
