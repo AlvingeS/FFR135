@@ -22,8 +22,7 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
       net_inputs(L),
       biases(L),
       cumulative_errors(L),
-      velocities_b(L),
-      velocities_b_old(L) {
+      velocities_b(L) {
  
     // Initialize layer heights
     this->layer_heights[0] = arch.num_inputs;
@@ -48,7 +47,6 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
         biases[l] = Vector<double>(layer_heights[l + 1], 0.0);
         cumulative_errors[l] = Vector<double>(layer_heights[l + 1], 0.0);
         velocities_b[l] = Vector<double>(layer_heights[l + 1], 0.0);
-        velocities_b_old[l] = Vector<double>(layer_heights[l + 1], 0.0);
 
         std::default_random_engine generator;
         double std_dev = std::sqrt(1 / static_cast<double>(layer_heights[l]));
@@ -60,6 +58,8 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
             }
         }
     }
+
+    weights.print_dims();
 }
 
 void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
@@ -116,13 +116,15 @@ void Network::compute_errors(int target_index) {
 
 void Network::update_velocities(double learning_rate, int target_index, size_t batch_size) {
     this->velocities_w_old = this->velocities_w;
-    this->velocities_b_old = this->velocities_b;
         
     double scaled_learning_rate = learning_rate / static_cast<double>(batch_size);
 
     for (size_t l = 1; l <= L; l++) {
         velocities_w[l - offset] = this->cumulative_products[l - offset] * scaled_learning_rate;
         velocities_b[l - offset] = this->cumulative_errors[l - offset] * scaled_learning_rate;
+    
+        this->cumulative_products[l - offset] = Matrix<double>(this->layer_heights[l], this->layer_heights[l - 1], 0.0);
+        this->cumulative_errors[l - offset] = Vector<double>(this->layer_heights[l], 0.0);
     }
 }
 

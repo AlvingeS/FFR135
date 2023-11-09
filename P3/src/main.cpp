@@ -21,7 +21,7 @@ int main() {
 
     // Create and train the network
     Network network(arch, training_data, validation_data);
-    network.train(0.005, 0.7, 2, 1000, true, true);   
+    network.train(0.005, 0.7, 2, 100, true, true);   
 
     return 0;
 };

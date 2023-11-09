@@ -179,6 +179,20 @@ public:
     // Dimensions
     size_t getRows() const { return rows; }
     size_t getCols() const { return cols; }
+
+    void print() const {
+        for (size_t i = 0; i < rows; ++i) {
+            data[i].print();
+        }
+    }
+
+    double mean() const {
+        double sum = 0.0;
+        for (size_t i = 0; i < rows; ++i) {
+            sum += data[i].sum();
+        }
+        return sum / (rows * cols);
+    }
 };
 
 template<typename T>
@@ -207,6 +221,12 @@ public:
         }
 
         return matrices[index];
+    }
+
+    void print_dims() const {
+        for (size_t i = 0; i < num_matrices; ++i) {
+            std::cout << matrices[i].getRows() << " " << matrices[i].getCols() << std::endl;
+        }
     }
 };
 

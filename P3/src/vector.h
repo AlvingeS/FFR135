@@ -2,6 +2,7 @@
 
 #include <vector>
 #include <stdexcept>
+#include <iostream>
 
 template<typename T>
 class Vector {
@@ -112,6 +113,21 @@ public:
     // Size of the vector
     size_t size() const {
         return data.size();
+    }
+
+    void print() const {
+        for (size_t i = 0; i < data.size(); ++i) {
+            std::cout << data[i] << " ";
+        }
+        std::cout << std::endl;
+    }
+
+    double sum() const {
+        double sum = 0.0;
+        for (size_t i = 0; i < data.size(); ++i) {
+            sum += data[i];
+        }
+        return sum;
     }
 };
 

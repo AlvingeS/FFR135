@@ -27,8 +27,6 @@ class Network {
         
         void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose);
 
-        void export_validation_results();
-
     private:
         static double g(double x) {
             return std::tanh(x);
