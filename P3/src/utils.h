@@ -4,16 +4,6 @@
 #include <iostream>
 #include <string>
 
-typedef std::vector<double> double_vector;
-typedef std::vector<int> int_vector;
-typedef std::vector<double_vector> double_matrix;
-typedef std::vector<double_matrix> double_tensor;
-
-struct Data {
-    double_matrix inputs;
-    double_matrix targets;
-};
-
 template <typename T>
 void print_matrix(std::vector<std::vector<T>> &matrix) {
     for (const auto &row : matrix) {

@@ -1,4 +1,4 @@
-#include "utils.h"
+#include "matrix.h"
 #include <fstream>
 #include <sstream>
 #include <utility>
@@ -6,16 +6,27 @@
 #include <random>
 #include <algorithm>
 #include <iomanip>
+#include <iostream>
 
 Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs) {
     std::ifstream file(filename);
 
-    Data data = {double_matrix(), double_matrix()};
-
     if (!file.is_open()) {
         std::cerr << "Could not open the file: " << filename << std::endl;
-        return data;
     }
+
+    // Calculate how many rows there are in the file
+    size_t num_rows = 0;
+    std::string line;
+    while (std::getline(file, line)) {
+        num_rows++;
+    }
+    
+    Data data = {Matrix(num_rows, num_inputs, 0.0), Matrix(num_rows, num_outputs, 0.0)};
+
+    // Reset the file pointer to the beginning of the file
+    file.clear();
+    file.seekg(0);
 
     // Read the first line to determine the number of fields
     std::string first_line;
@@ -30,28 +41,24 @@ Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs
         return data;
     }
 
-    std::string line;
+
+    size_t row_ind = 0;
+
     while (std::getline(file, line)) {
-        double_vector row;
         std::istringstream s(line);
         std::string field;
 
         for (size_t i = 0; i < num_inputs; ++i) {
             std::getline(s, field, ',');
-            row.push_back(std::stod(field));
+            data.inputs[row_ind][i] = std::stod(field);
         }
-
-        data.inputs.push_back(row);
-
-        row.clear();
 
         for (size_t i = 0; i < num_outputs; ++i) {
             std::getline(s, field, ',');
-            row.push_back(std::stod(field));
-
+            data.targets[row_ind][i] = std::stod(field);
         }
 
-        data.targets.push_back(row);
+        row_ind++;
     }
 
     file.close();
@@ -59,61 +66,62 @@ Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs
 }
 
 void normalize_input_data(Data &training_data, Data &data_to_be_normalized) {
-    double_vector mean(2, 0.0);
-    double_vector std_dev(2, 0.0);
-    size_t num_samples = training_data.inputs.size();
+    size_t num_samples = training_data.inputs.getRows();
+    size_t num_features = training_data.inputs.getCols();
+    Vector<double> mean(num_features, 0.0);
+    Vector<double> std_dev(num_features, 0.0);
     
     // Calculate the mean of each feature
-    for (const auto &row : training_data.inputs) {
-        for (size_t i = 0; i < 2; ++i) {
-            mean[i] += row[i];
+    for (size_t i = 0; i < num_samples; i++) {
+        for (size_t j = 0; j < num_features; ++j) {
+            mean[j] += training_data.inputs[i][j];
         }
     }
 
-    for (size_t i = 0; i < 2; ++i) {
-        mean[i] /= num_samples;
+    for (size_t j = 0; j < num_features; ++j) {
+        mean[j] /= num_samples;
     }
     
     // Calculate the standard deviation of each feature
-    for (const auto &row : training_data.inputs) {
-        for (size_t i = 0; i < 2; ++i) {
-            std_dev[i] += std::pow(row[i] - mean[i], 2);
+    for (size_t i = 0; i < num_samples; i++) {
+        for (size_t j = 0; j < num_features; ++j) {
+            std_dev[j] += std::pow(training_data.inputs[i][j] - mean[j], 2);
         }
     }
 
-    for (size_t i = 0; i < 2; ++i) {
-        std_dev[i] = std::sqrt(std_dev[i] / num_samples);
+    for (size_t j = 0; j < num_features; ++j) {
+        std_dev[j] = std::sqrt(std_dev[j] / num_samples);
     }
     
     // Normalize the data
-    for (auto &row : data_to_be_normalized.inputs) {
-        for (size_t i = 0; i < 2; ++i) {
-            row[i] = (row[i] - mean[i]) / std_dev[i];
+    for (size_t i = 0; i < data_to_be_normalized.inputs.getRows(); i++) {
+        for (size_t j = 0; j < num_features; ++j) {
+           data_to_be_normalized.inputs[i][j] = (data_to_be_normalized.inputs[i][j] - mean[j]) / std_dev[j];
         }
     }
 }
 
 void shuffle_data(Data& data) {
-    size_t data_size = data.inputs.size();
+    size_t num_samples = data.inputs.getRows();
     
     std::random_device rd;
     std::default_random_engine engine(rd());
     
-    std::vector<size_t> indices(data_size);
-    for (size_t i = 0; i < data_size; ++i) {
+    std::vector<size_t> indices(num_samples);
+    for (size_t i = 0; i < num_samples; ++i) {
         indices[i] = i;
     }
     
     std::shuffle(indices.begin(), indices.end(), engine);
     
-    double_matrix new_inputs(data_size);
-    double_matrix new_targets(data_size);
+    Matrix<double> new_inputs(data.inputs.getRows(), data.inputs.getCols(), 0.0);
+    Matrix<double> new_targets(data.targets.getRows(), data.targets.getCols(), 0.0);
     
-    for (size_t i = 0; i < data_size; ++i) {
+    for (size_t i = 0; i < num_samples; ++i) {
         new_inputs[i] = data.inputs[indices[i]];
         new_targets[i] = data.targets[indices[i]];
     }
 
-    data.inputs.swap(new_inputs);
-    data.targets.swap(new_targets);
+    data.inputs = new_inputs;
+    data.targets = new_targets;
 }

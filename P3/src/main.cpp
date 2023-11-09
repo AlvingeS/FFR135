@@ -1,5 +1,4 @@
 #include "network.h"
-#include "utils.h"
 #include "data_processing.h"
 #include <iostream>
 #include <vector>
@@ -17,7 +16,8 @@ int main() {
 
     shuffle_data(training_data);
 
-    arch_struct arch = {num_inputs, {32, 16, 8}, num_outputs};
+    Vector<int> hl_dims = {32, 16, 8};
+    arch_struct arch = {num_inputs, hl_dims, num_outputs};
 
     // Create and train the network
     Network network(arch, training_data, validation_data);
