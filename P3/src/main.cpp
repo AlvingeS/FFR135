@@ -10,6 +10,9 @@
 //     Benchmark #3: Updated compute_errors to not create new matrices for outer products 3.874s
 //     Benchmark #4: Propagate forward does not creat temp vector for compariosn 3.690s
 //     Benchmark #5: fixed the last one so outer_prod is not returning anything 3.251s
+//     Benchmark #6: fixed so transpose and apply function doesn't create new matrices 2.878s
+//     Benchmark #7: started using inplace operations instead of creating new matrices 2.138s
+//     Benchmark #8: Made elementwise multiplication in place 2.063s
 
 int main() {
     size_t num_inputs = 2;

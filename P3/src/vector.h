@@ -90,6 +90,24 @@ public:
         return result;
     }
 
+    Vector& operator*=(const T& scalar) {
+        for (size_t i = 0; i < data.size(); ++i) {
+            data[i] *= scalar;
+        }
+        return *this;
+    }
+
+    Vector& in_place_elementwise_multiplication(const Vector& other, Vector& result) {
+        if (data.size() != other.data.size())
+            throw std::out_of_range("Vector dimensions do not match for element-wise multiplication.");
+
+        for (size_t i = 0; i < data.size(); ++i) {
+            result[i] = data[i] * other[i];
+        }
+        
+        return result;
+    }
+
     // Element-wise multiplication
     Vector operator%(const Vector& other) const {
         if (data.size() != other.data.size())

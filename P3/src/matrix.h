@@ -48,7 +48,7 @@ public:
         return result;
     }
 
-    Matrix operator+=(const Matrix& other) {
+    Matrix& operator+=(const Matrix& other) {
         if (rows != other.rows || cols != other.cols)
             throw std::out_of_range("Matrix dimensions do not match for addition.");
 
@@ -74,7 +74,7 @@ public:
         return result;
     }
 
-    Matrix operator -= (const Matrix& other) {
+    Matrix& operator -= (const Matrix& other) {
         if (rows != other.rows || cols != other.cols)
             throw std::out_of_range("Matrix dimensions do not match for addition.");
 
@@ -141,6 +141,13 @@ public:
         return result;
     }
 
+    Matrix& operator*= (const T& scalar) {
+        for (size_t i = 0; i < rows; ++i) {
+            data[i] *= scalar;
+        }
+        return *this;
+    }
+
     static void outer_product(const Vector<T>& v1, const Vector<T>& v2, Matrix<T>& result) {
         size_t n = v1.size();
         size_t m = v2.size();
@@ -153,25 +160,22 @@ public:
     }
 
     // Transpose
-    Matrix transpose() const {
-        Matrix transposed(cols, rows);
+    Matrix& transpose(Matrix<T>& transposed_mat) const {
         for (size_t i = 0; i < rows; ++i) {
             for (size_t j = 0; j < cols; ++j) {
-                transposed[j][i] = data[i][j];
+                transposed_mat[j][i] = data[i][j];
             }
         }
-        return transposed;
+        return transposed_mat;
     }
 
     // Apply function element-wise
-    Matrix apply_function(T (*function)(T)) const {
-        Matrix result(rows, cols);
+    void apply_function(T (*function)(T)) const {
         for (size_t i = 0; i < rows; ++i) {
             for (size_t j = 0; j < cols; ++j) {
-                result[i][j] = function(data[i][j]);
+                data[i][j] = function(data[i][j]);
             }
         }
-        return result;
     }
 
     void reset() {
