@@ -8,6 +8,7 @@
 #include <iomanip>
 #include <iostream>
 
+
 Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs) {
     std::ifstream file(filename);
 
@@ -40,7 +41,6 @@ Data read_csv(const std::string &filename, size_t num_inputs, size_t num_outputs
                   << ") + num_outputs (" << num_outputs << ")" << std::endl;
         return data;
     }
-
 
     size_t row_ind = 0;
 

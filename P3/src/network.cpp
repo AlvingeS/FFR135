@@ -68,15 +68,15 @@ Network::Network(arch_struct arch, Data training_data, Data validation_data)
     }
 }
 
-void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose, double lookup_tol) {
+void Network::train(double learning_rate, double momentum, size_t batch_size, size_t num_epochs, bool measure_H, bool verbose) {
     double H_min = 3000;
     this->scaled_learning_rate = learning_rate / static_cast<double>(batch_size);
 
     for (size_t i = 0; i < num_epochs; i++) {
         for (size_t j = 0; j < this-> num_patterns; j++) {
 
-            this->propagate_forward(this->training_data.inputs[j], lookup_tol);
-            this->compute_errors(j, lookup_tol);
+            this->propagate_forward(this->training_data.inputs[j]);
+            this->compute_errors(j);
 
             if ((j + 1) % batch_size == 0) {
                 this->update_velocities(learning_rate, j, batch_size);
@@ -84,7 +84,7 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
             }
         }
 
-        this->validate(i, measure_H, verbose, lookup_tol);
+        this->validate(i, measure_H, verbose);
 
         if (this->H < H_min) {
             H_min = this->H;
@@ -92,7 +92,7 @@ void Network::train(double learning_rate, double momentum, size_t batch_size, si
     }
 }
 
-void Network::propagate_forward(const Vector<double> &input_signals, double lookup_tol) {
+void Network::propagate_forward(const Vector<double> &input_signals) {
     for (size_t l = 1; l <= L; l++) {
         if (l - 1 == 0) {
             net_inputs[l - offset] = weights[l - offset] * input_signals;
@@ -106,7 +106,7 @@ void Network::propagate_forward(const Vector<double> &input_signals, double look
     }
 }
 
-void Network::compute_errors(int target_index, double lookup_tol) {
+void Network::compute_errors(int target_index) {
     // Compute errors for output layer
     output_diff = this->training_data.targets[target_index];
     output_diff -= this->neuron_states[L - offset];
@@ -147,13 +147,13 @@ void Network::update_weights_and_biases(double momentum) {
     }
 }
 
-void Network::validate(size_t epoch, bool measure_H, bool verbose, double lookup_tol) {
+void Network::validate(size_t epoch, bool measure_H, bool verbose) {
     this->C = 0.0;
     this->H = 0.0;
 
     if (measure_H) {
         for (size_t i = 0; i < this->num_patterns; i++) {
-            this->propagate_forward(this->training_data.inputs[i], lookup_tol);
+            this->propagate_forward(this->training_data.inputs[i]);
             for (size_t j = 0; j < this->arch.num_outputs; j++) {
                 H += std::pow(this->training_data.targets[i][j] - this->get_output()[j], 2);
             }

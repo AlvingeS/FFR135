@@ -13,6 +13,8 @@
 //     Benchmark #6: fixed so transpose and apply function doesn't create new matrices 2.878s
 //     Benchmark #7: started using inplace operations instead of creating new matrices 2.138s
 //     Benchmark #8: Made elementwise multiplication in place 2.063s
+//     Benchmark #9: Made apply_function in place for vectors 1.900s
+//     Optimizaton resulted in a 4.85x speedup
 
 int main() {
     size_t num_inputs = 2;

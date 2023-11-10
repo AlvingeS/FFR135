@@ -1,5 +1,6 @@
 #pragma once
 
+#include "utils.h"
 #include "vector.h"
 #include <vector>
 #include <stdexcept>
@@ -119,6 +120,7 @@ public:
             throw std::out_of_range("Matrix and vector dimensions do not match for multiplication.");
 
         Vector<T> result(rows);
+
         for (size_t i = 0; i < rows; ++i) {
             for (size_t j = 0; j < other.size(); ++j) {
                 result[i] += data[i][j] * other[j];
@@ -167,15 +169,6 @@ public:
             }
         }
         return transposed_mat;
-    }
-
-    // Apply function element-wise
-    void apply_function(T (*function)(T)) const {
-        for (size_t i = 0; i < rows; ++i) {
-            for (size_t j = 0; j < cols; ++j) {
-                data[i][j] = function(data[i][j]);
-            }
-        }
     }
 
     void reset() {

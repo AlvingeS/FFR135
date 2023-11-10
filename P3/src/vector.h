@@ -3,6 +3,7 @@
 #include <vector>
 #include <stdexcept>
 #include <iostream>
+#include <unordered_map>
 
 template<typename T>
 class Vector {
@@ -49,7 +50,7 @@ public:
         return result;
     }
 
-    Vector operator+=(const Vector& other) {
+    Vector& operator+=(const Vector& other) {
         if (data.size() != other.data.size())
             throw std::out_of_range("Vector dimensions do not match for addition.");
 
@@ -71,7 +72,7 @@ public:
         return result;
     }
 
-    Vector operator-=(const Vector& other) {
+    Vector& operator-=(const Vector& other) {
         if (data.size() != other.data.size())
             throw std::out_of_range("Vector dimensions do not match for subtraction.");
 
@@ -79,15 +80,6 @@ public:
             data[i] -= other[i];
         }
         return *this;
-    }
-
-    // Vector scalar multiplication
-    Vector operator*(const T& scalar) const {
-        Vector result(data.size());
-        for (size_t i = 0; i < data.size(); ++i) {
-            result[i] = data[i] * scalar;
-        }
-        return result;
     }
 
     Vector& operator*=(const T& scalar) {
@@ -120,12 +112,11 @@ public:
         return result;
     }
 
-    Vector apply_function(T (*function)(T)) const {
-        Vector result(data.size());
+    Vector& apply_function(T (*function)(T)) {
         for (size_t i = 0; i < data.size(); ++i) {
-            result[i] = function(data[i]);
+            data[i] = function(data[i]);
         }
-        return result;
+        return *this;
     }
 
     // Size of the vector

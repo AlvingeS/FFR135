@@ -26,25 +26,9 @@ class Network {
             return this->neuron_states[L - offset];
         }
         
-        void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose, double lookup_tol);
+        void train(double learning_rate, double momentum, size_t batch_size, size_t num_epoch, bool measure_H, bool verbose);
 
     private:
-        double lookup(double x, double lookup_tol, double (*function)(double)) {
-            int bucket_key = static_cast<int>(x / lookup_tol);
-
-            if (lookup_table.find(bucket_key) != lookup_table.end()) {
-                for (const auto &pair : lookup_table[bucket_key]) {
-                    if (std::abs(pair.first - x) < lookup_tol) {
-                        return pair.second;
-                    }
-                }
-            }
-
-            double result = function(x);
-            lookup_table[bucket_key].push_back(std::make_pair(x, result));
-            return result;
-        }
-
         static double g(double x) {
             return std::tanh(x);
         }
@@ -53,11 +37,11 @@ class Network {
             return 1 - std::pow(std::tanh(x), 2);
         }
         
-        void propagate_forward(const Vector<double> &input_signals, double lookup_tol);
-        void compute_errors(int target_index, double lookup_tol);
+        void propagate_forward(const Vector<double> &input_signals);
+        void compute_errors(int target_index);
         void update_velocities(double learning_rate, int target_index, size_t batch_size);
         void update_weights_and_biases(double momentum);
-        void validate(size_t epoch, bool measure_H, bool verbose, double lookup_tol);
+        void validate(size_t epoch, bool measure_H, bool verbose);
 
         size_t num_patterns;
         size_t num_validation_patterns;
@@ -90,9 +74,7 @@ class Network {
         Vector<double> output_diff;
         Vector<double> output_element_wise_diff;
         VectorCollection<double> internal_element_wise_diff;
-
-        using Bucket = std::vector<std::pair<double, double>>;
-        std::unordered_map<int, Bucket> lookup_table;
+        VectorCollection<double> matrix_vector_product;
 
         double C = 0.0;
         double H = 0.0;
